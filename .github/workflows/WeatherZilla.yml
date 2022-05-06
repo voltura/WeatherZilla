@@ -2,7 +2,7 @@ name: Build and deploy .NET Core app to Windows WebApp WeatherZilla
 on:
   push:
     branches:
-    - Joakims_CCS_modifications
+    - master
 env:
   AZURE_WEBAPP_NAME: WeatherZilla
   AZURE_WEBAPP_PACKAGE_PATH: WeatherZilla/publish
