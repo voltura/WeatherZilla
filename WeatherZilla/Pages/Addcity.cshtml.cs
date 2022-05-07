@@ -5,8 +5,10 @@ namespace WeatherZilla.Pages
 {
     public class AddcityModel : PageModel
     {
+        public string cityName { get; set; }
         public void OnGet()
         {
+            cityName = "Lycksele";
         }
     }
 }
