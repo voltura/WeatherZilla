@@ -13,6 +13,9 @@ namespace WeatherZilla.Pages
 
         public void OnGet()
         {
+            // Testar lite * cool - synkar koden dp..
+            // ser du bara vs?
+            // Jag ser vår index fil... right, men skapar en klass för orter...
 
         }
     }
