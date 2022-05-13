@@ -13,7 +13,7 @@ env:
   AZURE_APIM_RESOURCEGROUP: WeatherZillaResourceGroup
   AZURE_APIM_SERVICENAME: WeatherZillaWebAPI
   AZURE_APIM_API_ID: weatherzilla
-  AZURE_APIM_APPSERVICEURL: https://weatherzilla.azurewebsites.net
+  AZURE_APIM_APPSERVICEURL: https://weatherzilla.azurewebsites.net/api
   SWASHBUCLE_ASPNET_CORE_CLI_PACKAGE_VERSION: 6.3.1
   SWASHBUCKLE_DOTNET_CORE_VERSION: 6.0.x
   API_IMPORT_SPECIFICATION_PATH: WeatherWebAPI/publish/swagger.json
