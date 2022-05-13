@@ -10,7 +10,7 @@ namespace WeatherWebAPI.Controllers
         private static readonly SemaphoreSlim _lock = new(1, 1);
         private Data.SmhiLatestHourAirTemp? _airTemp;
 
-        private readonly ILogger<WeatherDataController> _logger;
+        private readonly ILogger<WeatherDataController> _logger; // TODO: Use log feature
 
         public WeatherDataController(ILogger<WeatherDataController> logger)
         {
@@ -66,6 +66,5 @@ namespace WeatherWebAPI.Controllers
                 _lock.Release();
             }
         }
-
     }
 }

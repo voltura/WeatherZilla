@@ -25,6 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WeatherWebAPI\WeatherZillaWebAPI.csproj">
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\WeatherZillaData\WeatherZillaData.csproj">
       <Private>True</Private>
     </ProjectReference>
@@ -32,4 +35,7 @@
 	<PropertyGroup>
 		<AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
 	</PropertyGroup>
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Exec Command="if not exist &quot;$(TargetDir)\api\&quot; md &quot;$(TargetDir)\api&quot;&#xD;&#xA;copy /Y &quot;$(TargetDir)\*WebAPI*&quot; &quot;$(TargetDir)\api\&quot;&#xD;&#xA;copy /Y &quot;$(TargetDir)\*ZillaData*&quot; &quot;$(TargetDir)\api\&quot;" />
+	</Target>
 </Project>
