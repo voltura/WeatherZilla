@@ -1,4 +1,4 @@
-namespace WeatherWebAPI
+namespace WeatherZillaData
 {
     public class WeatherData
     {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using WeatherZillaData;
 
 namespace WeatherWebAPI.Controllers
 {
@@ -51,7 +52,7 @@ namespace WeatherWebAPI.Controllers
                 {
                     return _airTemp;
                 }
-                // TODO: Handle 'place' parameter, now hardcoded...
+                // TODO: Handle 'place' parameter, now hardcoded... SMHI has a service to get list of weather stations with name and ID, match name from param 'place' to get ID to use in below API call
                 var lyckseleSmhiStationID = "148330";
                 // Demo API call; get temperature in Celsius for Lycksele (SMHI station with ID 148330)
                 string address = $"https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/{lyckseleSmhiStationID}/period/latest-hour/data.json";

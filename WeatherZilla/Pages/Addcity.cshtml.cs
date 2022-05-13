@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using WeatherZillaData;
 
 namespace WeatherZilla.Pages
 {
@@ -9,7 +10,7 @@ namespace WeatherZilla.Pages
         public string Temperature { get; private set; }
         private readonly HttpClient _client;
         private static readonly SemaphoreSlim _lock = new(1, 1);
-        private Data.SmhiLatestHourAirTemp? _airTemp;
+        private IEnumerable<WeatherData>? _airTemp;
 
         public AddcityModel()
         {
@@ -27,12 +28,12 @@ namespace WeatherZilla.Pages
 
         public async Task<string> UseTemperature()
         {
-            Data.SmhiLatestHourAirTemp? airTemp = _airTemp ?? await GetAirTempAsync();
-            string? temperature = airTemp?.ValueData?[0]?.RoundedValue;
+            IEnumerable<WeatherData?> airTemp = _airTemp ?? await GetAirTempAsync();
+            string? temperature = airTemp?.First()?.TemperatureC.ToString();
             return temperature is null ? "" : temperature;
         }
 
-        private async Task<Data.SmhiLatestHourAirTemp> GetAirTempAsync()
+        private async Task<IEnumerable<WeatherData>> GetAirTempAsync()
         {
             if (_airTemp != null)
             {
@@ -48,13 +49,14 @@ namespace WeatherZilla.Pages
                     return _airTemp;
                 }
 
-                var lyckseleSmhiStationID = "148330";
-                // Demo API call; get temperature in Celsius for Lycksele (SMHI station with ID 148330)
-                string address = $"https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/{lyckseleSmhiStationID}/period/latest-hour/data.json";
-                _airTemp = await _client.GetFromJsonAsync<Data.SmhiLatestHourAirTemp>(address);
+                // Demo API call; get temperature in Celsius for Lycksele
+                // TODO: Read address from configuration (Azure feature..?)
+                // TODO: Validate CityName string
+                string address = $"https://weatherzillawebapi.azure-api.net/WeatherData?place={CityName}";
+                _airTemp = await _client.GetFromJsonAsync<IEnumerable<WeatherData>>(address);
                 if (_airTemp is null)
                 {
-                    _airTemp = new Data.SmhiLatestHourAirTemp();
+                    _airTemp = Enumerable.Range(1, 1).Select(index => new WeatherZillaData.WeatherData { }).ToArray();
                 }
                 return _airTemp;
             }
