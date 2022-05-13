@@ -52,7 +52,7 @@ namespace WeatherZilla.Pages
                 // Demo API call; get temperature in Celsius for Lycksele
                 // TODO: Read address from configuration (Azure feature..?)
                 // TODO: Validate CityName string
-                string address = $"https://weatherzillawebapi.azure-api.net/WeatherData?place={CityName}";
+                string address = $"https://weatherzillawebapi.azure-api.net/api/WeatherData?place={CityName}";
                 _airTemp = await _client.GetFromJsonAsync<IEnumerable<WeatherData>>(address);
                 if (_airTemp is null)
                 {

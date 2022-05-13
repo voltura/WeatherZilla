@@ -10,10 +10,10 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v2
 
-    - name: Display it
-      run: |
-        echo -n "${{ secrets.WEATHERZILLA_87D6 }}" >> foo && cut -c1-3 foo && cut -c4- foo
-    - name: Display it again
-      run: |
-        echo -n "${{ secrets.WEATHERZILLA_D89C }}" >> foo && cut -c1-3 foo && cut -c4- foo
+#    - name: Display it
+#      run: |
+#        echo -n "${{ secrets.WEATHERZILLA_87D6 }}" >> foo && cut -c1-3 foo && cut -c4- foo
+#    - name: Display it again
+#      run: |
+#        echo -n "${{ secrets.WEATHERZILLA_D89C }}" >> foo && cut -c1-3 foo && cut -c4- foo
         
