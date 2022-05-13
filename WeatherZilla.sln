@@ -9,6 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla", "WeatherZill
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZillaWebAPI", "WeatherWebAPI\WeatherZillaWebAPI.csproj", "{3527E624-F96F-44AE-AAB1-B3700DE3A016}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9F32385F-8A3A-45C7-980F-3BDAE5001DEC} = {9F32385F-8A3A-45C7-980F-3BDAE5001DEC}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeatherZillaData", "WeatherZillaData\WeatherZillaData.csproj", "{9F32385F-8A3A-45C7-980F-3BDAE5001DEC}"
 EndProject

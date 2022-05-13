@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using WeatherZillaData;
 
 namespace WeatherWebAPI.Controllers
 {
@@ -20,13 +19,12 @@ namespace WeatherWebAPI.Controllers
         }
 
         [HttpGet(Name = "GetWeatherData")]
-        public async Task<IEnumerable<WeatherData>> GetAsync(string place)
+        public async Task<IEnumerable<WeatherZillaData.WeatherData>> GetAsync(string place)
         {
-
             Data.SmhiLatestHourAirTemp? airTemp = _airTemp ?? await GetAirTempAsync(place);
             string? temperature = airTemp?.ValueData?[0]?.RoundedValue;
 
-            return Enumerable.Range(1, 1).Select(index => new WeatherData
+            return Enumerable.Range(1, 1).Select(index => new WeatherZillaData.WeatherData
             {
                 Date = DateTime.Now,
                 TemperatureC = Convert.ToInt32(temperature),
