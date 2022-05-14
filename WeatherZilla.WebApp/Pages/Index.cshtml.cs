@@ -14,7 +14,7 @@ namespace WeatherZilla.WebApp.Pages
         private static readonly SemaphoreSlim _lock = new(1, 1);
         private IEnumerable<WeatherData>? _airTemp;
         private readonly ILogger<IndexModel> _logger;
-        private IConfiguration _configuration;
+        private readonly IConfiguration _configuration;
 
         public IndexModel(ILogger<IndexModel> logger, IConfiguration configuration)
         {

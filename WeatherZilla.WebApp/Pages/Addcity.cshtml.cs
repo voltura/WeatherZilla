@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace WeatherZilla.WebApp.Pages
@@ -6,7 +5,7 @@ namespace WeatherZilla.WebApp.Pages
     public class AddcityModel : PageModel
     {
         public string CityName { get; set; }
-        private IConfiguration _configuration;
+        private readonly IConfiguration _configuration;
 
         public AddcityModel(IConfiguration configuration)
         {
