@@ -55,7 +55,7 @@ namespace WeatherZilla.Pages
                 // TODO: Validate CityName string
                 // Read web api address from Azure configuration (set by action WeatherZillaWebApp.yml in github)
                 string weatherDataForPlace = _configuration["WeatherDataUrls:WeatherDataForPlace"];
-                DebugData = "Read application configuration key 'WeatherDataUrls:WeatherDataForPlace' from Azure and it returned value '{weatherDataForPlace}'";
+                DebugData = $"Read application configuration key 'WeatherDataUrls:WeatherDataForPlace' from Azure and it returned value '{weatherDataForPlace}'";
                 string address = $"{((string.IsNullOrWhiteSpace(weatherDataForPlace)) ? "https://weatherzillawebapi.azure-api.net/api/WeatherData?place=" : weatherDataForPlace)}{CityName}";
                 // Demo API call; get temperature in Celsius for Lycksele
                 _airTemp = await _client.GetFromJsonAsync<IEnumerable<WeatherData>>(address);
