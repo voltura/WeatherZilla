@@ -27,7 +27,7 @@ namespace WeatherZilla.WebAPI.Controllers
 
             return Enumerable.Range(1, 1).Select(index => new WeatherData
             {
-                Date = DateTime.Now,
+                Date = DateTime.Now, // TODO: take UNIX timestamp from airtemp > value > date and convert to .NET datetime...
                 TemperatureC = Convert.ToInt32(temperature),
                 Place = airTemp?.Station?.Name is null ? place : airTemp.Station.Name,
                 Longitude = airTemp?.Position?[0].Longitude is null ? 0 : airTemp.Position[0].Longitude,
@@ -54,7 +54,10 @@ namespace WeatherZilla.WebAPI.Controllers
                 // TODO: Handle 'place' parameter, now hardcoded... SMHI has a service to get list of weather stations with name and ID, match name from param 'place' to get ID to use in below API call
                 var lyckseleSmhiStationID = "148330";
                 // Demo API call; get temperature in Celsius for Lycksele (SMHI station with ID 148330)
+
+                // TODO: Add to config
                 string address = $"https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/{lyckseleSmhiStationID}/period/latest-hour/data.json";
+
                 _airTemp = await _client.GetFromJsonAsync<Data.SmhiLatestHourAirTemp>(address);
                 if (_airTemp is null)
                 {

@@ -1,0 +1,88 @@
+// 20220514205328
+// https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/148330/period/latest-hour/data.json
+
+{
+  "value": [
+    {
+      "date": 1652551200000,
+      "value": "9.7",
+      "quality": "G"
+    }
+  ],
+  "updated": 1652551200000,
+  "parameter": {
+    "key": "1",
+    "name": "Lufttemperatur",
+    "summary": "momentanvärde, 1 gång/tim",
+    "unit": "degree celsius"
+  },
+  "station": {
+    "key": "148330",
+    "name": "Lycksele A",
+    "owner": "SMHI",
+    "ownerCategory": "SMHI",
+    "height": 2.0
+  },
+  "period": {
+    "key": "latest-hour",
+    "from": 1652547601000,
+    "to": 1652551200000,
+    "summary": "Data från senaste timmen",
+    "sampling": "Ej angivet"
+  },
+  "position": [
+    {
+      "from": -283996800000,
+      "to": -259286401000,
+      "height": 225.0,
+      "latitude": 64.5871,
+      "longitude": 18.6587
+    },
+    {
+      "from": -259286400000,
+      "to": 815183999000,
+      "height": 234.0,
+      "latitude": 64.5871,
+      "longitude": 18.6587
+    },
+    {
+      "from": 818985600000,
+      "to": 1652551200000,
+      "height": 210.07,
+      "latitude": 64.5481,
+      "longitude": 18.713
+    }
+  ],
+  "link": [
+    {
+      "rel": "data",
+      "type": "application/json",
+      "href": "https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/148330/period/latest-hour/data.json"
+    },
+    {
+      "rel": "data",
+      "type": "application/xml",
+      "href": "https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/148330/period/latest-hour/data.xml"
+    },
+    {
+      "rel": "data",
+      "type": "text/plain",
+      "href": "https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/148330/period/latest-hour/data.csv"
+    },
+    {
+      "rel": "period",
+      "type": "application/atom+xml",
+      "href": "https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/148330/period/latest-hour.atom"
+    },
+    {
+      "rel": "iso19139",
+      "type": "application/vnd.iso.19139+xml",
+      "href": "https://opendata-catalog.smhi.se/catalog/srv/eng/csw?request=GetRecordById&service=CSW&version=2.0.2&elementSetName=full&outputSchema=csw:IsoRecord&id=25080190-38ba-4279-a65d-d9ef8d0bf949"
+    },
+    {
+      "rel": "iso19139",
+      "type": "application/vnd.iso.19139+xml",
+      "href": "https://opendata-catalog.smhi.se/catalog/srv/eng/csw?request=GetRecordById&service=CSW&version=2.0.2&elementSetName=full&outputSchema=csw:IsoRecord&id=c6ae10b6-6a18-4e15-9444-fbd746f4609d"
+    }
+  ]
+}
