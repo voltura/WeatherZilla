@@ -44,7 +44,7 @@ jobs:
       with:
         creds: ${{ secrets.WeatherZillaWebAPI_spn }}
     - name: Create Azure application configuration
-      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WeatherDataUrls:WeatherDataForPlace="https://weatherzillawebapi.azure-api.net/api/WeatherData?place="
+      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WeatherDataUrls:WeatherDataForPlace="https://weatherzilla.azurewebsites.net/api/WeatherData?place="
     - name: logout
       run: >
         az logout
