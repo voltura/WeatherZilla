@@ -3,17 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla.WebApp", "WeatherZilla.WebApp\WeatherZilla.WebApp.csproj", "{AFDE65CE-3EC9-40D0-8287-728208681055}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3527E624-F96F-44AE-AAB1-B3700DE3A016} = {3527E624-F96F-44AE-AAB1-B3700DE3A016}
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla.WebAPI", "WeatherZilla.WebAPI\WeatherZilla.WebAPI.csproj", "{3527E624-F96F-44AE-AAB1-B3700DE3A016}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla.WebAPI", "WeatherZilla.WebAPI.csproj", "{3527E624-F96F-44AE-AAB1-B3700DE3A016}"
 	ProjectSection(ProjectDependencies) = postProject
 		{9F32385F-8A3A-45C7-980F-3BDAE5001DEC} = {9F32385F-8A3A-45C7-980F-3BDAE5001DEC}
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla.Shared", "WeatherZilla.Shared\WeatherZilla.Shared.csproj", "{9F32385F-8A3A-45C7-980F-3BDAE5001DEC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla.Shared", "..\WeatherZilla.Shared\WeatherZilla.Shared.csproj", "{9F32385F-8A3A-45C7-980F-3BDAE5001DEC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -38,6 +33,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {514BE3C8-A01E-4B02-A568-E36327EAAD88}
+		SolutionGuid = {514BE3C8-A01E-4B02-A568-E36327EAAD89}
 	EndGlobalSection
 EndGlobal

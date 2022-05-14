@@ -1,0 +1,15 @@
+﻿@page
+@model WeatherZilla.WebApp.Pages.IndexModel
+@{
+    ViewData["Title"] = "WeatherZilla";
+}
+<div class="text-center">
+    <h1 class="display-4">Welcome to a Spiffier Weather 😎 !!</h1>
+</div>
+<div>
+    <br>
+    <p>It is <b>@Model.Temperature°C</b> in @Model.CityName right now.</p>
+    <br>
+    <br>
+    <p><strong>Debug:</strong>&nbsp;@Model.DebugData</p>
+</div>
