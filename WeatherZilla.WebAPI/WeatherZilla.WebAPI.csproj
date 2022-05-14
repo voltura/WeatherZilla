@@ -11,9 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WeatherZilla.Shared\WeatherZilla.Shared.csproj">
-      <Private>True</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\WeatherZilla.Shared\WeatherZilla.Shared.csproj" />
   </ItemGroup>
 	<PropertyGroup>
 		<AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
