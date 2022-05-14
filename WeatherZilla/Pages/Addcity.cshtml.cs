@@ -7,6 +7,7 @@ namespace WeatherZilla.Pages
     public class AddcityModel : PageModel
     {
         public string CityName { get; set; }
+        public string DebugData { get; set; }
         public string Temperature { get; private set; }
         private readonly HttpClient _client;
         private static readonly SemaphoreSlim _lock = new(1, 1);
@@ -14,6 +15,7 @@ namespace WeatherZilla.Pages
         private IConfiguration _configuration;
         public AddcityModel(IConfiguration configuration)
         {
+            DebugData = "";
             CityName = "Lycksele";
             Temperature = "Unknown";
             _client = new();
@@ -53,11 +55,13 @@ namespace WeatherZilla.Pages
                 // TODO: Validate CityName string
                 // Read web api address from Azure configuration (set by action WeatherZillaWebApp.yml in github)
                 string weatherDataForPlace = _configuration["WeatherDataUrls:WeatherDataForPlace"];
+                DebugData = "Read application configuration key 'WeatherDataUrls:WeatherDataForPlace' from Azure and it returned value '{weatherDataForPlace}'";
                 string address = $"{((string.IsNullOrWhiteSpace(weatherDataForPlace)) ? "https://weatherzillawebapi.azure-api.net/api/WeatherData?place=" : weatherDataForPlace)}{CityName}";
                 // Demo API call; get temperature in Celsius for Lycksele
                 _airTemp = await _client.GetFromJsonAsync<IEnumerable<WeatherData>>(address);
                 if (_airTemp is null)
                 {
+                    DebugData = "Could not get weather data";
                     _airTemp = Enumerable.Range(1, 1).Select(index => new WeatherZillaData.WeatherData { }).ToArray();
                 }
                 return _airTemp;
