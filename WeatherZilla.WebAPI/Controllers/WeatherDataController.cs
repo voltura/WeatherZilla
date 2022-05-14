@@ -26,9 +26,15 @@ namespace WeatherZilla.WebAPI.Controllers
             string? temperature = airTemp?.ValueData?[0]?.RoundedValue;
 
             DateTime weatherDateTime = DateTime.Now;
-            if (airTemp != null && airTemp.Period != null)
+            if (airTemp != null)
             {
-                weatherDateTime = DateTime.FromFileTimeUtc(airTemp.Period.To);
+                weatherDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+                double secondsFromSeventies = 0;
+                if (airTemp?.ValueData?[0]?.Date > 0)
+                {
+                    secondsFromSeventies = airTemp.ValueData[0].Date / 1000;
+                }
+                weatherDateTime = weatherDateTime.AddSeconds(secondsFromSeventies).ToLocalTime();
             }
             return Enumerable.Range(1, 1).Select(index => new WeatherData
             {
