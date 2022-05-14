@@ -64,6 +64,14 @@ namespace WeatherZilla.WebApp.Pages
                 string address = $"{((string.IsNullOrWhiteSpace(weatherDataForPlace)) ? WeatherZilla.Shared.Constants.WEATHERDATA_FOR_PLACE_DEFAULT_URL : weatherDataForPlace)}{CityName}";
                 // Demo API call; get temperature in Celsius for Lycksele
                 _airTemp = await _client.GetFromJsonAsync<IEnumerable<WeatherData>>(address);
+
+
+                string? connectionString = _configuration.GetConnectionString("aspnet-WeatherZilla-db_ConnectionString");
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    // Development...
+                }
+
                 if (_airTemp is null)
                 {
                     // DEBUG: Show debug info
