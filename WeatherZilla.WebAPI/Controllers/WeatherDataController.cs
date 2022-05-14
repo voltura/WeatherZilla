@@ -25,9 +25,14 @@ namespace WeatherZilla.WebAPI.Controllers
             Data.SmhiLatestHourAirTemp? airTemp = _airTemp ?? await GetAirTempAsync(place);
             string? temperature = airTemp?.ValueData?[0]?.RoundedValue;
 
+            DateTime weatherDateTime = DateTime.Now;
+            if (airTemp != null && airTemp.Period != null)
+            {
+                weatherDateTime = DateTime.FromFileTimeUtc(airTemp.Period.To);
+            }
             return Enumerable.Range(1, 1).Select(index => new WeatherData
             {
-                Date = DateTime.Now, // TODO: take UNIX timestamp from airtemp > value > date and convert to .NET datetime...
+                Date = weatherDateTime,
                 TemperatureC = Convert.ToInt32(temperature),
                 Place = airTemp?.Station?.Name is null ? place : airTemp.Station.Name,
                 Longitude = airTemp?.Position?[0].Longitude is null ? 0 : airTemp.Position[0].Longitude,
