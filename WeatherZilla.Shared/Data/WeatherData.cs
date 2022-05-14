@@ -1,6 +1,8 @@
+using WeatherZilla.Shared.Interfaces;
+
 namespace WeatherZilla.Shared.Data
 {
-    public class WeatherData
+    public class WeatherData : IWeatherData
     {
         public DateTime Date { get; set; }
 

@@ -35,12 +35,12 @@ namespace WeatherZilla.WebApp.Pages
 
         public async Task<string> UseTemperature()
         {
-            IEnumerable<WeatherData?> airTemp = _airTemp ?? await GetAirTempAsync();
+            IEnumerable<WeatherZilla.Shared.Interfaces.IWeatherData?> airTemp = _airTemp ?? await GetAirTempAsync();
             string? temperature = airTemp?.First()?.TemperatureC.ToString();
             return temperature is null ? "" : temperature;
         }
 
-        private async Task<IEnumerable<WeatherData>> GetAirTempAsync()
+        private async Task<IEnumerable<WeatherZilla.Shared.Interfaces.IWeatherData>> GetAirTempAsync()
         {
             if (_airTemp != null)
             {
