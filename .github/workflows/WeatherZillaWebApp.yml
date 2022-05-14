@@ -7,6 +7,7 @@ env:
   AZURE_WEBAPP_NAME: WeatherZilla
   AZURE_WEBAPP_PACKAGE_PATH: WeatherZilla/publish
   AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.WeatherZilla_87d6 }}
+  AZURE_APIM_RESOURCEGROUP: WeatherZillaResourceGroup
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 6.0.x
   WORKING_DIRECTORY: WeatherZilla
@@ -38,3 +39,12 @@ jobs:
       with:
         name: webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.WeatherZillaWebAPI_spn }}
+    - name: Create Azure application configuration
+      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WeatherDataUrls:WeatherDataForPlace:"https://weatherzillawebapi.azure-api.net/api/WeatherData?place="
+    - name: logout
+      run: >
+        az logout
