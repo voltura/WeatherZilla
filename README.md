@@ -9,3 +9,14 @@ https://opendata.smhi.se/apidocs/metobs/index.html
 https://opendata.smhi.se/apidocs/metobs/demo.html
 
 
+Technical help - Azure Web App / DB
+
+https://docs.microsoft.com/en-us/azure/app-service/
+
+https://docs.microsoft.com/en-us/azure/app-service/tutorial-dotnetcore-sqldb-app?tabs=azure-portal%2Cvisualstudio-deploy%2Cdeploy-instructions-azure-portal%2Cazure-portal-logs%2Cazure-portal-resources
+
+
+Misc;
+dotnet tool install -g dotnet-ef
+dotnet ef migrations add InitialCreate
+dotnet ef database update
