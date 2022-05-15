@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -32,4 +32,16 @@
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
   </PropertyGroup>
 
+  <ItemGroup>
+    <WebApiFiles Include="$(SolutionDir)WeatherZilla.WebAPI/bin/**/*"/>
+  </ItemGroup>
+
+  <Target Name="CopyWebApiFiles" AfterTargets="Build">
+    <Copy SourceFiles="@(WebApiFiles)" DestinationFolder="$(TargetDir)api/"/>
+  </Target>
+<!--
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="echo copy" />
+  </Target>
+-->
 </Project>
