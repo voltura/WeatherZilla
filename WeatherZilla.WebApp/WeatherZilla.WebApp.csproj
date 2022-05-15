@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WeatherZilla.Shared\WeatherZilla.Shared.csproj" />
+    <ProjectReference Include="..\WeatherZilla.WebAPI\WeatherZilla.WebAPI.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -33,11 +34,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <WebApiFiles Include="$(SolutionDir)WeatherZilla.WebAPI/bin/**/*"/>
+    <WebApiFiles Include="$(SolutionDir)WeatherZilla.WebAPI/bin/**/*" />
   </ItemGroup>
 
   <Target Name="CopyWebApiFiles" AfterTargets="Build">
-    <Copy SourceFiles="@(WebApiFiles)" DestinationFolder="$(TargetDir)api/"/>
+    <Copy SourceFiles="@(WebApiFiles)" DestinationFolder="$(TargetDir)api/" />
   </Target>
 <!--
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
