@@ -11,7 +11,7 @@
           <legend>Search for place to add</legend>
           <div>
             <label for="place">Place:</label>
-            <input type="text" name="Place" value="" />
+            <input type="text" name="Place" value="" maxlength="20"/>
             <input type="submit" value="Submit" class="submit" />
           </div>
           <div>
@@ -20,4 +20,4 @@
         </fieldset>
       </form>
 </div>
-<div>You searched for: @Model.Place</div>
+<div>@Model.UserName searched for: @Model.Place</div>
