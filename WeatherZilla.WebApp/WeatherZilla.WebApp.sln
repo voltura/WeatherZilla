@@ -6,11 +6,6 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla.Shared", "..\WeatherZilla.Shared\WeatherZilla.Shared.csproj", "{D8A1D22F-C588-46CC-9E34-4DF3DFD4EFE4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla.WebApp", "WeatherZilla.WebApp.csproj", "{76A5D8BF-3DF3-469E-8F91-23491FEF7488}"
-	ProjectSection(ProjectDependencies) = postProject
-		{9C90A747-4250-4C7D-8457-BA782C95CF25} = {9C90A747-4250-4C7D-8457-BA782C95CF25}
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherZilla.WebAPI", "..\WeatherZilla.WebAPI\WeatherZilla.WebAPI.csproj", "{9C90A747-4250-4C7D-8457-BA782C95CF25}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,10 +21,6 @@ Global
 		{76A5D8BF-3DF3-469E-8F91-23491FEF7488}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76A5D8BF-3DF3-469E-8F91-23491FEF7488}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76A5D8BF-3DF3-469E-8F91-23491FEF7488}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C90A747-4250-4C7D-8457-BA782C95CF25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C90A747-4250-4C7D-8457-BA782C95CF25}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C90A747-4250-4C7D-8457-BA782C95CF25}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C90A747-4250-4C7D-8457-BA782C95CF25}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

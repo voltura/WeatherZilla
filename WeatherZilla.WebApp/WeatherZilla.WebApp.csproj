@@ -32,16 +32,4 @@
     <AspNetCoreHostingModel>OutOfProcess</AspNetCoreHostingModel>
   </PropertyGroup>
 
-  <ItemGroup>
-    <WebApiFiles Include="$(SolutionDir)../WeatherZilla.WebAPI/bin/**/*" />
-  </ItemGroup>
-
-  <Target Name="CopyWebApiFiles" AfterTargets="Build">
-    <Copy SourceFiles="@(WebApiFiles)" DestinationFolder="$(TargetDir)api/" />
-  </Target>
-
-  <PropertyGroup>
-    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
-  </PropertyGroup>
-
 </Project>
