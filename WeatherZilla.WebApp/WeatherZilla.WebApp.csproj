@@ -40,9 +40,9 @@
   <Target Name="CopyWebApiFiles" AfterTargets="Build">
     <Copy SourceFiles="@(WebApiFiles)" DestinationFolder="$(TargetDir)api/" />
   </Target>
-<!--
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="echo copy" />
-  </Target>
--->
+
+  <PropertyGroup>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
+  </PropertyGroup>
+
 </Project>
