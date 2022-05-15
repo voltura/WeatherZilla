@@ -1,4 +1,4 @@
-name: Build and deploy WeatherZilla
+name: Build and deploy WeatherZilla.WebAPI
 on:
   push:
     branches:
@@ -6,12 +6,12 @@ on:
 env:
   AZURE_WEBAPP_NAME: WeatherZilla
   AZURE_WEBAPP_PACKAGE_PATH: WeatherZilla/publish
-  AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.WeatherZilla_87d6 }}
+  AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.WeatherZilla_D89C }}
   AZURE_APIM_RESOURCEGROUP: WeatherZillaResourceGroup
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 6.0.x
-  WORKING_DIRECTORY: WeatherZilla.WebApp
-  DEPLOYMENT_TARGET: %ARTIFACTS%\wwwroot
+  WORKING_DIRECTORY: WeatherZilla.WebAPI
+  DEPLOYMENT_TARGET: %ARTIFACTS%\wwwroot\api
 jobs:
   build-and-deploy:
     runs-on: windows-latest
@@ -34,7 +34,7 @@ jobs:
       with:
         creds: ${{ secrets.WeatherZillaWebAPI_spn }}
     - name: Modify deployment target
-      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings DEPLOYMENT_TARGET="%ARTIFACTS%\wwwroot"        
+      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings DEPLOYMENT_TARGET="%ARTIFACTS%\wwwroot\api"
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v2
       with:
@@ -46,8 +46,6 @@ jobs:
       with:
         name: webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-    - name: Create Azure application configuration
-      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WeatherDataUrls:WeatherDataForPlace="https://weatherzilla.azurewebsites.net/api/WeatherData?place="
     - name: logout
       run: >
         az logout
