@@ -1,0 +1,25 @@
+﻿@page
+@model WeatherZilla.WebApp.Pages.AddPlaceModel
+@{ 
+    ViewData["Title"] = "WeatherZilla - Add favorites";
+}
+<h1>Add favorite place</h1>
+<p />
+<div>
+    <form method="post" >
+        <fieldset>
+          <legend>Search for place to add</legend>
+          <div>
+            <label for="place">Place:</label>
+            <input type="text" name="Place" id="place" value="" maxlength="20"/>
+            <input type="submit" value="Search"/>
+          </div>
+        </fieldset>
+      </form>
+</div>
+
+<div>
+    <br>
+    @Model.StatusMessage
+    <br>
+</div>

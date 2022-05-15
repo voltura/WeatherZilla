@@ -16,3 +16,9 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.debugInfo {
+    margin: 10px;
+    font-size: 10px;
+    color: dimgrey;
+}
