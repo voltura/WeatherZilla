@@ -22,11 +22,11 @@ jobs:
         creds: ${{ secrets.WeatherZillaWebAPI_spn }}
     - name: Modify deployment target for WebApp
       run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings DEPLOYMENT_TARGET="C:\home\site\wwwroot"
-    - name: Set Azure application configuration
+    - name: Set Azure Application Config Data
       run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WeatherDataUrls:WeatherDataForPlace="https://weatherzilla.azurewebsites.net/api/WeatherData?place="
-    - name: Restart webapp after reconfig
+    - name: Restart WebApp after re-config
       run: az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }}
-    - name: logout
+    - name: Logout from Azure
       run: >
         az logout
 
@@ -62,7 +62,7 @@ jobs:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         publish-profile: ${{ env.AZURE_WEBAPP_PUBLISH_PROFILE }}
-    - name: Publish Artifacts
+    - name: Publish WebApp Artifacts
       uses: actions/upload-artifact@v1.0.0
       with:
         name: webapp
@@ -70,7 +70,7 @@ jobs:
 
   uppdate-webapi-config:
     runs-on: windows-latest
-    name: Update WebApi config
+    name: Update WebApi Config
     needs: build-and-deploy-webapp
     env:
       AZURE_WEBAPP_NAME: WeatherZilla
@@ -89,7 +89,7 @@ jobs:
       run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings DEPLOYMENT_TARGET="C:\home\site\wwwroot\api"
     - name: Restart webapp after reconfig
       run: az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }}
-    - name: logout
+    - name: Logout from Azure
       run: >
         az logout
 
