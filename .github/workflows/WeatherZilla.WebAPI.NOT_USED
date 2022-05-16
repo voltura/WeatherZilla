@@ -34,6 +34,8 @@ jobs:
         creds: ${{ secrets.WeatherZillaWebAPI_spn }}
     - name: Modify deployment target
       run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings DEPLOYMENT_TARGET="C:\home\site\wwwroot\api"
+    - name: Restart webapp after reconfig
+      run: az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }}
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v2
       with:
