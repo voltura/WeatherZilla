@@ -19,4 +19,15 @@ namespace WeatherZilla.Shared.Data
         public double Longitude { get; set; }
 
     }
+    public class StationsData : IStationsData
+    {
+        public DateTime Date { get; set; }
+
+        public int StationsId { get; set; }
+
+        public string? StationsName { get; set; }
+
+        public bool? Active { get; set; }
+
+    }
 }
