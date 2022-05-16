@@ -137,7 +137,7 @@ jobs:
   deploy-webapi:
     runs-on: windows-latest
     name: Deploy WebApi
-    needs: uppdate-webapp-config
+    needs: uppdate-webapi-config
     env:
       AZURE_WEBAPP_NAME: WeatherZilla
       AZURE_WEBAPP_PACKAGE_PATH: WeatherZilla/publish
