@@ -2,7 +2,7 @@ name: Build and deploy WeatherZilla
 on:
   push:
     branches:
-    - master
+    - 'release**'
 jobs:
   uppdate-webapp-config:
     runs-on: windows-latest
