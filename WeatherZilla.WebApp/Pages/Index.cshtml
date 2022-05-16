@@ -8,8 +8,13 @@
 </div>
 <div>
     <br>
-    <p>It is <b>@Model.Temperature°C</b> in @Model.CityName right now.</p>
+    <p>It's <b>@Model.Temperature°C</b> in @Model.Place right now.</p>
     <br>
     <br>
-    <p><strong>Debug:</strong>&nbsp;@Model.DebugData</p>
+
+@if (!string.IsNullOrWhiteSpace(Model.DebugData))
+{
+    <p class="debugInfo"><strong>Debug:</strong>&nbsp;@Model.DebugData</p>        
+}
+
 </div>
