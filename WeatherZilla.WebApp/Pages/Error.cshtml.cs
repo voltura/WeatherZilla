@@ -38,7 +38,7 @@ namespace WeatherZilla.WebApp.Pages
 
         private void HandleError()
         {
-            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier; 
+            RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
             ExceptionHandlerFeature? exceptionHandlerFeature = (ExceptionHandlerFeature?)HttpContext.Features.Get<IExceptionHandlerPathFeature>();
             Path = exceptionHandlerFeature?.Path;
             ErrorInfoToUser = "Something went wrong, please try again.";
