@@ -15,5 +15,12 @@
         public static readonly string DEFAULT_SMHI_JSON_STATIONS_URL = "https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1.json";
 
         #endregion SMHI JSON addresses
+
+        #region Memory cache keys
+
+        public static readonly string STATIONDATA_MEMORY_CACHE_KEY = "STATIONDATA_MEMORY_CACHE_KEY";
+        public static readonly string AIRTEMP_CACHE_KEY = "AIRTEMP_CACHE_KEY";
+
+        #endregion Memory cache keys
     }
 }

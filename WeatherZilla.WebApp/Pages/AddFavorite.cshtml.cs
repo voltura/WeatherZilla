@@ -82,7 +82,7 @@ namespace WeatherZilla.WebApp.Pages
                 return;
             }
 
-            bool validUserInput = userInput.All(c => Char.IsLetterOrDigit(c));
+            bool validUserInput = userInput.All(c => Char.IsLetterOrDigit(c) || Char.IsWhiteSpace(c) || c == '-');
             if (!validUserInput)
             {
                 Status = STATUS.InvalidInput;
