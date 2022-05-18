@@ -1,6 +1,8 @@
-﻿namespace WeatherZilla.Shared.Interfaces
+﻿using WeatherZilla.Shared.Interfaces;
+
+namespace WeatherZilla.Shared.Data
 {
-    public interface IStationsData
+    public class StationsData : IStationsData
     {
         public DateTime Date { get; set; }
         public int StationsId { get; set; }

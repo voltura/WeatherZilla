@@ -25,8 +25,10 @@ jobs:
         creds: ${{ secrets.WeatherZillaWebAPI_spn }}
     - name: Modify deployment target for WebApp
       run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings DEPLOYMENT_TARGET="C:\home\site\wwwroot"
-    - name: Set Azure Application Config Data
-      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WeatherDataUrls:WeatherDataForPlace="https://weatherzilla.azurewebsites.net/api/WeatherData?place="
+    - name: Set Azure Application Config Data Url 1
+      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WEATHERZILLA_WEBAPI_URLS:WEATHERDATA_FOR_PLACE_URL="https://weatherzilla.azurewebsites.net/api/WeatherData/GetWeatherData?place="
+    - name: Set Azure Application Config Data Url 2
+      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WEATHERZILLA_WEBAPI_URLS:STATIONDATA_URL="https://weatherzilla.azurewebsites.net/api/WeatherData/GetStationData"
     - name: Restart WebApp after re-config
       run: az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }}
     - name: Logout from Azure
@@ -90,6 +92,10 @@ jobs:
         creds: ${{ secrets.WeatherZillaWebAPI_spn }}
     - name: Modify deployment target for WebApi
       run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings DEPLOYMENT_TARGET="C:\home\site\wwwroot\api"
+    - name: Set Application Config Data in Azure SMHI urls 1
+      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings SMHI_URLS:SMHI_JSON_STATIONS_URL="https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1.json"
+    - name: Set Application Config Data in Azure SMHI urls 2
+      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings SMHI_URLS:SMHI_JSON_LATEST_HOUR_AIRTEMP_URL="https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/{0}/period/latest-hour/data.json"
     - name: Restart webapp after reconfig
       run: az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }}
     - name: Logout from Azure

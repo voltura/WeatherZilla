@@ -7,8 +7,9 @@ namespace WeatherZilla.WebApp.Pages
     {
         #region Public properties
 
-        public string StatusMessage { 
-            get 
+        public string StatusMessage
+        {
+            get
             {
                 switch (Status)
                 {
@@ -32,10 +33,10 @@ namespace WeatherZilla.WebApp.Pages
                         return "Please enter a place";
                 }
             }
-            private set { } 
+            private set { }
         }
         public string? Place { get; set; }
-        public string? UserName { get; set; }       
+        public string? UserName { get; set; }
         public STATUS Status { get; private set; }
 
         #endregion Public properties
@@ -43,10 +44,10 @@ namespace WeatherZilla.WebApp.Pages
         private readonly IConfiguration _configuration;
 
         public enum STATUS { NoSearchPerformed, ReadyForSearch, Searching, SearchSuccess, NoSearchResult, MissingInput, InvalidInput, SearchFailure, SearchAborted, NoUser };
-        
+
         public AddPlaceModel(IConfiguration configuration)
         {
-            _configuration = configuration;            
+            _configuration = configuration;
             Status = STATUS.NoSearchPerformed;
         }
 
@@ -54,7 +55,7 @@ namespace WeatherZilla.WebApp.Pages
         {
             UserName = GetLoggedInUser();
         }
-        
+
         public void OnPost()
         {
             GetUserInput();

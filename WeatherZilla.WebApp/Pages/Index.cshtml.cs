@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Web;
 using WeatherZilla.Shared.Data;
 
 namespace WeatherZilla.WebApp.Pages
@@ -56,14 +57,22 @@ namespace WeatherZilla.WebApp.Pages
                 }
 
                 // TODO: Validate Place string
-
-                // Read web api address from Azure configuration (set by action WeatherZillaWebApp.yml in github)
-                string weatherDataForPlace = _configuration["WeatherDataUrls:WeatherDataForPlace"];
-                // DEBUG: Show debug info
-                DebugData = $"Tried to read application configuration key 'WeatherDataUrls:WeatherDataForPlace' from Azure and it returned {(string.IsNullOrWhiteSpace(weatherDataForPlace) ? "nothing; using default value '" + WeatherZilla.Shared.Constants.WEATHERDATA_FOR_PLACE_DEFAULT_URL + "'" : "'" + weatherDataForPlace + "'")}.";
-                string address = $"{((string.IsNullOrWhiteSpace(weatherDataForPlace)) ? WeatherZilla.Shared.Constants.WEATHERDATA_FOR_PLACE_DEFAULT_URL : weatherDataForPlace)}{Place}";
-                // Demo API call; get temperature in Celsius for Lycksele
-                _airTemp = await _client.GetFromJsonAsync<IEnumerable<WeatherData>>(address);
+                bool validPlace = Place.All(c => Char.IsLetterOrDigit(c));
+                if (!validPlace)
+                {
+                    _logger.LogDebug("Place '{Place}' not valid.", Place);
+                }
+                else
+                {
+                    Place = HttpUtility.UrlEncode(Place);
+                    // Read web api address from Azure configuration (set by action .github\workflows\WeatherZilla.AzureDeployment.yml via github)
+                    string weatherDataForPlaceUrl = _configuration["WEATHERZILLA_WEBAPI_URLS:WEATHERDATA_FOR_PLACE_URL"];
+                    // DEBUG: Show debug info
+                    DebugData = $"Tried to read application configuration key 'WeatherDataUrls:WeatherDataForPlace' it returned {(string.IsNullOrWhiteSpace(weatherDataForPlaceUrl) ? "nothing; using default value '" + WeatherZilla.Shared.Constants.DEFAULT_WEATHERDATA_FOR_PLACE_URL + "'" : "'" + weatherDataForPlaceUrl + "'")}.";
+                    string address = $"{(string.IsNullOrWhiteSpace(weatherDataForPlaceUrl) ? WeatherZilla.Shared.Constants.DEFAULT_WEATHERDATA_FOR_PLACE_URL : weatherDataForPlaceUrl)}{Place}";
+                    // Demo API call; get temperature in Celsius for Lycksele
+                    _airTemp = await _client.GetFromJsonAsync<IEnumerable<WeatherData>>(address);
+                }
 
                 if (_airTemp is null)
                 {

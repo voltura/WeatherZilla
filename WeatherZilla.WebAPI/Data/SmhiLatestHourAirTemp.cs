@@ -1,10 +1,11 @@
 ﻿using System.Globalization;
 using System.Text.Json.Serialization;
 
-namespace WeatherZilla.WebAPI.Data
+namespace WeatherZilla.WebAPI.SmhiLatestHourAirTempData
 {
-    // SmhiLatestHourAirTemp myDeserializedClass = JsonConvert.DeserializeObject<SmhiLatestHourAirTemp>(myJsonResponse);
-    // SmhiLatestHourAirTemp myDeserializedClass = JsonSerializer.Deserialize<SmhiLatestHourAirTemp>(myJsonResponse);
+    // NOTES: Classes shall match json from smhi on this url https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/<stationID>/period/latest-hour/data.json
+    //        Example usage: SmhiLatestHourAirTemp myDeserializedClass = JsonConvert.DeserializeObject<SmhiLatestHourAirTemp>(myJsonResponse);
+    //                       SmhiLatestHourAirTemp myDeserializedClass = JsonSerializer.Deserialize<SmhiLatestHourAirTemp>(myJsonResponse);
     public class Link
     {
         [JsonPropertyName("rel")]
@@ -137,5 +138,4 @@ namespace WeatherZilla.WebAPI.Data
         [JsonPropertyName("quality")]
         public string? Quality { get; set; }
     }
-
 }

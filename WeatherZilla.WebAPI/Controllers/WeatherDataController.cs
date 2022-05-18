@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Web;
 using WeatherZilla.Shared.Data;
+using WeatherZilla.WebAPI.SmhiLatestHourAirTempData;
+using WeatherZilla.WebAPI.SmhiStationData;
 
 namespace WeatherZilla.WebAPI.Controllers
 {
@@ -7,35 +10,49 @@ namespace WeatherZilla.WebAPI.Controllers
     [Route("[controller]")]
     public class WeatherDataController : ControllerBase
     {
-        private readonly HttpClient _client;
-        private static readonly SemaphoreSlim _lock = new(1, 1);
-        private Data.SmhiLatestHourAirTemp? _airTemp;
+        #region Properties
+
+        public string? DebugData { get; set; }
+
+        #endregion Properties
+
+        #region Injections
 
         private readonly ILogger<WeatherDataController> _logger; // TODO: Use log feature
+        private readonly IConfiguration _configuration;
 
-        public WeatherDataController(ILogger<WeatherDataController> logger)
+        #endregion Injections
+
+        #region Private variables
+
+        private readonly HttpClient _client;
+        private static readonly SemaphoreSlim _lock = new(1, 1);
+        private SmhiLatestHourAirTemp? _airTemp;
+        private static readonly SemaphoreSlim _stationLock = new(1, 1);
+        private SmhiStations? _stations;
+
+        #endregion Private variables
+
+        #region Constructor
+
+        public WeatherDataController(ILogger<WeatherDataController> logger, IConfiguration configuration)
         {
             _logger = logger;
+            _configuration = configuration;
             _client = new();
+            _logger.LogDebug("Created HTTPClient");
         }
 
-        [HttpGet(Name = "GetWeatherData")]
+        #endregion Constructor
+
+        #region Public web methods
+
+        [HttpGet("GetWeatherData")]
         public async Task<IEnumerable<WeatherData>> GetAsync(string place)
         {
-            Data.SmhiLatestHourAirTemp? airTemp = _airTemp ?? await GetAirTempAsync(place);
+            SmhiLatestHourAirTemp? airTemp = _airTemp ?? await GetAirTempAsync(place);
             string? temperature = airTemp?.ValueData?[0]?.RoundedValue;
-
-            DateTime weatherDateTime = DateTime.Now;
-            if (airTemp != null)
-            {
-                weatherDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-                double secondsFromSeventies = 0;
-                if (airTemp?.ValueData?[0]?.Date > 0)
-                {
-                    secondsFromSeventies = airTemp.ValueData[0].Date / 1000;
-                }
-                weatherDateTime = weatherDateTime.AddSeconds(secondsFromSeventies).ToLocalTime();
-            }
+            DateTime weatherDateTime = Data.SmhiDateHelper.GetDateTimeFromSmhiDate(airTemp?.ValueData?[0]?.Date);
             return Enumerable.Range(1, 1).Select(index => new WeatherData
             {
                 Date = weatherDateTime,
@@ -47,7 +64,39 @@ namespace WeatherZilla.WebAPI.Controllers
             .ToArray();
         }
 
-        private async Task<Data.SmhiLatestHourAirTemp> GetAirTempAsync(string place)
+        [HttpGet("GetStationData")]
+        public async Task<IEnumerable<StationsData>> GetAsync()
+        {
+            return GetStationDataList(_stations ?? await GetStationsAsync());
+        }
+
+        #endregion Public web methods
+
+        #region Private methods
+
+        private static List<StationsData> GetStationDataList(SmhiStations? stations)
+        {
+            List<StationsData> stationDatas = new();
+            DateTime stationDateTime;
+            stations?.Station?.ForEach(smhiStation =>
+            {
+                // Only use active weather stations
+                if (smhiStation.Active)
+                {
+                    // Get updated datetime for station
+                    stationDateTime = Data.SmhiDateHelper.GetDateTimeFromSmhiDate(smhiStation.Updated);
+                    stationDatas.Add(new StationsData()
+                    {
+                        StationsId = smhiStation.Id,
+                        StationsName = smhiStation.Name,
+                        Date = stationDateTime
+                    });
+                }
+            });
+            return stationDatas;
+        }
+
+        private async Task<SmhiLatestHourAirTemp> GetAirTempAsync(string place)
         {
             if (_airTemp != null)
             {
@@ -62,18 +111,32 @@ namespace WeatherZilla.WebAPI.Controllers
                 {
                     return _airTemp;
                 }
-                // TODO: Handle 'place' parameter, now hardcoded... SMHI has a service to get list of weather stations with name and ID, match name from param 'place' to get ID to use in below API call
-                var lyckseleSmhiStationID = "148330";
-                // Demo API call; get temperature in Celsius for Lycksele (SMHI station with ID 148330)
 
-                // TODO: Add to config
-                string address = $"https://opendata-download-metobs.smhi.se/api/version/latest/parameter/1/station/{lyckseleSmhiStationID}/period/latest-hour/data.json";
+                place = HttpUtility.UrlDecode(place).ToLowerInvariant();
+                List<StationsData> stationDatas = GetStationDataList(_stations ?? await GetStationsAsync());
+                StationsData? matchingPlace = stationDatas.Find(x => x.StationsName != null && x.StationsName.ToLowerInvariant().StartsWith(place));
 
-                _airTemp = await _client.GetFromJsonAsync<Data.SmhiLatestHourAirTemp>(address);
-                if (_airTemp is null)
+                if (matchingPlace is null)
                 {
-                    _airTemp = new Data.SmhiLatestHourAirTemp();
+                    _logger.LogDebug("Could not find a station for {place}", place);
                 }
+                else
+                {
+                    var smhiStationID = matchingPlace.StationsId.ToString();
+
+                    string? smhiLatestHourAirTempJsonAddress = _configuration?["SMHI_URLS:SMHI_JSON_LATEST_HOUR_AIRTEMP_URL"];
+                    if (string.IsNullOrWhiteSpace(smhiLatestHourAirTempJsonAddress))
+                    {
+                        smhiLatestHourAirTempJsonAddress = Shared.Constants.DEFAULT_SMHI_JSON_LATEST_HOUR_AIRTEMP_URL;
+                    }
+
+                    // API call; get temperature in Celsius for SMHI station with identifier smhiStationID)
+                    string smhiLatestHourDataFromStationJsonAddress = string.Format(smhiLatestHourAirTempJsonAddress, smhiStationID);
+
+                    _airTemp = await _client.GetFromJsonAsync<SmhiLatestHourAirTemp>(smhiLatestHourDataFromStationJsonAddress);
+                }
+
+                _airTemp = (_airTemp is null) ? new SmhiLatestHourAirTemp() : _airTemp;
                 return _airTemp;
             }
             finally
@@ -81,5 +144,49 @@ namespace WeatherZilla.WebAPI.Controllers
                 _lock.Release();
             }
         }
+
+        private async Task<SmhiStations> GetStationsAsync()
+        {
+            if (_stations != null)
+            {
+                return await Task.FromResult(_stations);
+            }
+
+            await _stationLock.WaitAsync();
+            try
+            {
+                // double check in case another thread has completed
+                if (_stations != null)
+                {
+                    return _stations;
+                }
+
+                // Read address from Application Configuration if available - otherwise use default 
+                // INFO: This value is also set by action .github\workflows\WeatherZilla.AzureDeployment.yml via github to Azure (WebApp environment) during production deployment
+                string? smhiStationsJsonAddress = _configuration?["SMHI_URLS:SMHI_JSON_STATIONS_URL"];
+
+                // DEBUG: Log debug data
+                DebugData = $"Tried to read application configuration key 'SMHI_URLS:SMHI_JSON_STATIONS_URL' in Azure and it returned {(string.IsNullOrWhiteSpace(smhiStationsJsonAddress) ? "nothing; using default value '" + Shared.Constants.DEFAULT_SMHI_JSON_STATIONS_URL + "'" : "'" + smhiStationsJsonAddress + "'")}.";
+                _logger.LogDebug("{DebugData}", DebugData);
+
+                if (string.IsNullOrWhiteSpace(smhiStationsJsonAddress))
+                {
+                    smhiStationsJsonAddress = Shared.Constants.DEFAULT_SMHI_JSON_STATIONS_URL;
+                }
+
+                // Call SMHI with HttpClient to get Json into class Data.SmhiStations (which should be matching their data)
+                _stations = await _client.GetFromJsonAsync<SmhiStations>(smhiStationsJsonAddress);
+
+                _stations = (_stations is null) ? new SmhiStations() : _stations;
+                return _stations;
+            }
+            finally
+            {
+                _stationLock.Release();
+            }
+        }
+
+        #endregion Private methods
+
     }
 }

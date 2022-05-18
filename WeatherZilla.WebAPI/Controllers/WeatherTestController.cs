@@ -12,6 +12,7 @@ namespace WeatherZilla.WebAPI.Controllers
         public WeatherTestController(ILogger<WeatherTestController> logger)
         {
             _logger = logger;
+            _logger.LogDebug("Created a WeatherTestController class instance");
         }
 
         [HttpGet(Name = "GetTestWeatherData")]
