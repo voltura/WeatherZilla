@@ -11,27 +11,20 @@ namespace WeatherZilla.WebApp.Pages
         {
             get
             {
-                switch (Status)
+                return Status switch
                 {
-                    case STATUS.Searching:
-                        return $"Searching for {Place}...";
-                    case STATUS.SearchSuccess:
-                        return $"Found {Place}";
-                    case STATUS.NoSearchResult:
-                        return $"Didn't find {Place}";
-                    case STATUS.SearchFailure:
-                        return $"Unable to perform search for {Place}";
-                    case STATUS.NoUser:
-                        return "Not logged in";
-                    case STATUS.ReadyForSearch:
-                        return $"Input {Place} accepted";
-                    /*case STATUS.NoSearchPerformed:
-                    case STATUS.MissingInput:
-                    case STATUS.SearchAborted:
-                    case STATUS.InvalidInput:*/
-                    default:
-                        return "Please enter a place";
-                }
+                    STATUS.Searching => $"Searching for {Place}...",
+                    STATUS.SearchSuccess => $"Found {Place}",
+                    STATUS.NoSearchResult => $"Didn't find {Place}",
+                    STATUS.SearchFailure => $"Unable to perform search for {Place}",
+                    STATUS.NoUser => "Not logged in",
+                    STATUS.ReadyForSearch => $"Input {Place} accepted",
+                    /*  STATUS.NoSearchPerformed:
+                        STATUS.MissingInput:
+                        STATUS.SearchAborted:
+                        STATUS.InvalidInput:  */
+                    _ => "Please enter a place",
+                };
             }
             private set { }
         }
