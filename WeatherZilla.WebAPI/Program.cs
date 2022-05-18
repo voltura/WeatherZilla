@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Rewrite;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -15,6 +17,11 @@ var app = builder.Build();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+var option = new RewriteOptions();
+option.AddRedirect("^$", "swagger");
+
+app.UseRewriter(option);
 
 app.UseHttpsRedirection();
 
