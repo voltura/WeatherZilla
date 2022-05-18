@@ -4,8 +4,8 @@
     {
         #region WeatherZilla WebAPI addresses
 
-        public static readonly string DEFAULT_WEATHERDATA_FOR_PLACE_URL = "https://localhost:7165/WeatherData/GetWeatherData?place=";
-        public static readonly string DEFAULT_STATIONDATA_URL = "https://localhost:7165/WeatherData/GetStationData";
+        public static readonly string DEFAULT_WEATHERDATA_FOR_PLACE_URL = "https://weatherzilla.azurewebsites.net/api/WeatherData/GetWeatherData?place=";
+        public static readonly string DEFAULT_STATIONDATA_URL = "https://weatherzilla.azurewebsites.net/api/WeatherData/GetStationData";
 
         #endregion WeatherZilla WebAPI addresses
 
