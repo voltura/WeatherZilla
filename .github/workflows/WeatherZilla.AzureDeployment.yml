@@ -29,6 +29,8 @@ jobs:
       run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WEATHERZILLA_WEBAPI_URLS:WEATHERDATA_FOR_PLACE_URL="https://weatherzilla.azurewebsites.net/api/WeatherData/GetWeatherData?place="
     - name: Set Azure Application Config Data Url 2
       run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WEATHERZILLA_WEBAPI_URLS:STATIONDATA_URL="https://weatherzilla.azurewebsites.net/api/WeatherData/GetStationData"
+    - name: Set Azure Application Config Data Url 3
+      run: az webapp config appsettings set --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }} --settings WEATHERZILLA_WEBAPI_URLS:WEATHERDATA_FOR_GEOLOCATION_URL="https://weatherzilla.azurewebsites.net/api/WeatherData/GetWeatherDataForGeoLocation?longitude={0}&latitude={1}"
     - name: Restart WebApp after re-config
       run: az webapp restart --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_APIM_RESOURCEGROUP }}
     - name: Logout from Azure

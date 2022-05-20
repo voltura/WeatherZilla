@@ -6,6 +6,7 @@
 
         public static readonly string DEFAULT_WEATHERDATA_FOR_PLACE_URL = "https://weatherzilla.azurewebsites.net/api/WeatherData/GetWeatherData?place=";
         public static readonly string DEFAULT_STATIONDATA_URL = "https://weatherzilla.azurewebsites.net/api/WeatherData/GetStationData";
+        public static readonly string DEFAULT_WEATHERDATA_FOR_GEOLOCATION_URL = $"https://weatherzilla.azurewebsites.net/api/WeatherData/GetWeatherDataForGeoLocation?longitude={0}&latitude={1}";
 
         #endregion WeatherZilla WebAPI addresses
 

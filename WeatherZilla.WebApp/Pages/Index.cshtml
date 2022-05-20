@@ -8,7 +8,8 @@
 </div>
 <div>
     <br>
-    <p>It's <b>@Model.Temperature°C</b> in @Model.Place right now.</p>
+    <p>It's&nbsp;<b>@Model.Temperature°C</b>&nbsp;in&nbsp;<i>@Model.Place</i>&nbsp;right now.</p>
+	<button id="locationButton" type="button" class="greenbtn" onclick="getLocation()">Use Actual Location</button>
     <br>
     <br>
 
@@ -18,3 +19,15 @@
 }
 
 </div>
+
+<script type="text/javascript">
+	function getLocation() {
+		if (navigator.geolocation) {
+			navigator.geolocation.getCurrentPosition(useLocation);
+		}
+	};
+
+	function useLocation(position) {
+		window.location.replace('?longitude=' + position.coords.longitude + '&latitude=' + position.coords.latitude);
+	};
+</script>
