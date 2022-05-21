@@ -43,7 +43,7 @@ namespace WeatherZilla.WebApp.Pages
 
         public async Task<string> UseTemperatureFromGeoLocation(double longitude, double latitude)
         {
-            WeatherData? airTempGeo = (WeatherData?) (_airTempGeo ?? await GetAirTempAsyncFromGeoLocation(longitude, latitude));
+            WeatherData? airTempGeo = (WeatherData?)(_airTempGeo ?? await GetAirTempAsyncFromGeoLocation(longitude, latitude));
             string? temperature = airTempGeo?.TemperatureC.ToString();
             Place = airTempGeo?.Place is null ? "Unknown" : airTempGeo.Place;
             return temperature is null ? "" : temperature;
@@ -125,7 +125,7 @@ namespace WeatherZilla.WebApp.Pages
                 // DEBUG: Show debug info
                 DebugData = $"Tried to read application configuration key 'WEATHERZILLA_WEBAPI_URLS:WEATHERDATA_FOR_GEOLOCATION_URL' it returned {(string.IsNullOrWhiteSpace(weatherDataForGeoLocationUrl) ? "nothing; using default value '" + WeatherZilla.Shared.Constants.DEFAULT_WEATHERDATA_FOR_GEOLOCATION_URL + "'" : "'" + weatherDataForGeoLocationUrl + "'")}.";
                 string address = $"{(string.IsNullOrWhiteSpace(weatherDataForGeoLocationUrl) ? WeatherZilla.Shared.Constants.DEFAULT_WEATHERDATA_FOR_GEOLOCATION_URL : weatherDataForGeoLocationUrl)}";
-                address = string.Format(address, longitude.ToString().Replace(',','.'), latitude.ToString().Replace(',', '.'));
+                address = string.Format(address, longitude.ToString().Replace(',', '.'), latitude.ToString().Replace(',', '.'));
                 // Demo API call; get temperature in Celsius for Lycksele
                 _airTempGeo = await _client.GetFromJsonAsync<WeatherData>(address);
 

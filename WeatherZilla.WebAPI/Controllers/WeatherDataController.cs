@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using System.Collections.Generic;
 using System.Web;
 using WeatherZilla.Shared.Data;
 using WeatherZilla.Shared.Interfaces;
@@ -89,17 +90,35 @@ namespace WeatherZilla.WebAPI.Controllers
             return await GetStationDataForLocation(longitude, latitude);
         }
 
-        [HttpGet("GetWeatherDataForGeoLocation")]
-        public async Task<IWeatherData> GetWeatherDataAsync(double longitude, double latitude)
+        [HttpGet("GetWeatherDatasForGeoLocation")]
+        public async Task<IEnumerable<IWeatherData>> GetWeatherDatasAsync(double longitude, double latitude)
         {
-            StationsData sd = (StationsData)await GetStationDataForLocation(longitude, latitude);
-
-            List<WeatherData>? wdList = (List<WeatherData>)await GetWeatherDataForPlace(sd.StationsName is null ? "Lycksele" : sd.StationsName);
-            if (wdList is not null && wdList.Count >= 1)
+            List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
+            List<WeatherData> wdCollection = new();
+            
+            for (int i = 0; i < sdCollection.Count; i++)
             {
-                return wdList[0];
+                var stationData = sdCollection[i];
+                WeatherData? wd = GetWeatherDataForStation(stationData.StationsId);
+                if (wd != null)
+                    wdCollection.Add(wd);
             }
-            return new WeatherData();
+            return wdCollection;
+        }
+
+        [HttpGet("GetWeatherDataForGeoLocation")]
+        public async Task<IWeatherData?> GetWeatherDataAsync(double longitude, double latitude)
+        {
+            List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
+
+            for (int i = 0; i < sdCollection.Count; i++)
+            {
+                var stationData = sdCollection[i];
+                WeatherData? wd = GetWeatherDataForStation(stationData.StationsId);
+                if (wd != null)
+                    return wd;
+            }
+            return null;
         }
 
         #endregion Public web methods
@@ -230,7 +249,7 @@ namespace WeatherZilla.WebAPI.Controllers
             }
         }
 
-        private async Task<IStationsData> GetStationDataForLocation(double longitude, double latitude)
+        private async Task<IEnumerable<IStationsData>> GetStationDatasForLocation(double longitude, double latitude)
         {
             // If found in cache, return cached data
             if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData> stationDataCollection))
@@ -245,22 +264,142 @@ namespace WeatherZilla.WebAPI.Controllers
                 // Set object in cache
                 _memoryCache.Set(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, stationDataCollection, cacheOptions);
             }
-            // Try to get stationdata matching given longitude and latitude
-            // TODO: make selection smarter, do not get last match but a list of matches and then take the match with last date (i.e. the place which has received an airtemp reading closest to current datetime)
-            StationsData stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 2).Equals(Math.Round(longitude, 2)) && Math.Round(x.Latitude, 2).Equals(Math.Round(latitude, 2))).LastOrDefault(new StationsData());
-            if (string.IsNullOrEmpty(stationsData.StationsName))
+            // Get stationdata list sorted closest to user longitude and latitude
+            GeoCoordinate.NetStandard2.GeoCoordinate? userCoordinate = new(latitude, longitude);
+            IEnumerable<GeoCoordinate.NetStandard2.GeoCoordinate> nearestStationCoordinates = stationDataCollection.Select(x => new GeoCoordinate.NetStandard2.GeoCoordinate(x.Latitude, x.Longitude))
+                                   .Where(x => x != null)
+                                   .OrderBy(x => x.GetDistanceTo(userCoordinate)).Distinct().Take(10);
+            List<StationsData> stationsDatas = new();
+            StationsData? stationsData = null;
+            IEnumerable<StationsData>? tempStationsDatas = null;
+            if (nearestStationCoordinates != null)
             {
-                stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 1).Equals(Math.Round(longitude, 1)) && Math.Round(x.Latitude, 1).Equals(Math.Round(latitude, 1))).LastOrDefault(new StationsData());
+                foreach (GeoCoordinate.NetStandard2.GeoCoordinate nearestStationCoordinate in nearestStationCoordinates)
+                {
+                    tempStationsDatas = (IEnumerable<StationsData>?)stationDataCollection.Where(x => x.Longitude.Equals(nearestStationCoordinate.Longitude) &&
+                        x.Latitude.Equals(nearestStationCoordinate.Latitude) && !string.IsNullOrEmpty(x.StationsName)).DistinctBy(y => y.StationsName).Take(10);
+                    if (tempStationsDatas != null)
+                    {
+                        stationsDatas.AddRange(tempStationsDatas);
+                    }
+                }
             }
-            if (string.IsNullOrEmpty(stationsData.StationsName))
+
+            // If no match, just try to get a value
+            if (stationsDatas.Count < 1 || (stationsDatas.Count == 1 && string.IsNullOrEmpty(stationsDatas[0].StationsName)))
             {
-                stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 0).Equals(Math.Round(longitude, 0)) && Math.Round(x.Latitude, 0).Equals(Math.Round(latitude, 0))).LastOrDefault(new StationsData());
+                stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 2).Equals(Math.Round(longitude, 2)) && Math.Round(x.Latitude, 2).Equals(Math.Round(latitude, 2))).LastOrDefault(new StationsData());
+                if (string.IsNullOrEmpty(stationsData?.StationsName))
+                {
+                    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 1).Equals(Math.Round(longitude, 1)) && Math.Round(x.Latitude, 1).Equals(Math.Round(latitude, 1))).LastOrDefault(new StationsData());
+                }
+                if (string.IsNullOrEmpty(stationsData?.StationsName))
+                {
+                    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 0).Equals(Math.Round(longitude, 0)) && Math.Round(x.Latitude, 0).Equals(Math.Round(latitude, 0))).LastOrDefault(new StationsData());
+                }
+                if (string.IsNullOrEmpty(stationsData?.StationsName))
+                {
+                    stationsData = new() { StationsName = "Lycksele" };
+                }
+                stationsDatas.Add(stationsData);
             }
-            if (string.IsNullOrEmpty(stationsData.StationsName))
+            return stationsDatas;
+        }
+
+        private async Task<IStationsData> GetStationDataForLocation(double longitude, double latitude)
+        {
+
+            // TODO: Do not rely on this slow function that handles all stations with linq etc. also implement the memory cache for the value
+            List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
+            for (int i = 0; i < sdCollection.Count; i++)
             {
-                stationsData.StationsName = "Lycksele"; // DEBUG: Default to Lycksele, because why not? Change this behavior to something else
+                var stationData = sdCollection[i];
+
+                if (GetWeatherDataForStation(stationData.StationsId) != null)
+                    return stationData;
             }
-            return stationsData;
+            return sdCollection.ToArray()[0];
+
+            //// If found in cache, return cached data
+            //if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData> stationDataCollection))
+            //{
+            //    _logger.LogDebug("Using cached, not live, SMHI station data.");
+            //}
+            //else
+            //{
+            //    stationDataCollection = GetStationDataList(_stations ?? await GetStationsAsync());
+            //    // Set cache options
+            //    MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(10));
+            //    // Set object in cache
+            //    _memoryCache.Set(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, stationDataCollection, cacheOptions);
+            //}
+            //// Try to get stationdata closest to user longitude and latitude
+            //// TODO: Do the linq selection on already filtered list where temperature is available
+            //GeoCoordinate.NetStandard2.GeoCoordinate? userCoordinate = new(latitude, longitude);
+            //GeoCoordinate.NetStandard2.GeoCoordinate? nearestStationCoordinate = stationDataCollection.Select(x => new GeoCoordinate.NetStandard2.GeoCoordinate(x.Latitude, x.Longitude))
+            //                       .Where(x => x != null)
+            //                       .OrderBy(x => x.GetDistanceTo(userCoordinate))
+            //                       .FirstOrDefault();
+            //StationsData stationsData = new();
+            //if (nearestStationCoordinate != null) 
+            //{
+            //    stationsData = stationDataCollection.Where(x => x.Longitude.Equals(nearestStationCoordinate.Longitude) &&
+            //    x.Latitude.Equals(nearestStationCoordinate.Latitude) && !string.IsNullOrEmpty(x.StationsName)).FirstOrDefault(new StationsData());
+            //}
+            //// If no match, just try to get a value
+            //if (string.IsNullOrEmpty(stationsData.StationsName))
+            //{
+            //    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 2).Equals(Math.Round(longitude, 2)) && Math.Round(x.Latitude, 2).Equals(Math.Round(latitude, 2))).LastOrDefault(new StationsData());
+            //}
+            //if (string.IsNullOrEmpty(stationsData.StationsName))
+            //{
+            //    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 1).Equals(Math.Round(longitude, 1)) && Math.Round(x.Latitude, 1).Equals(Math.Round(latitude, 1))).LastOrDefault(new StationsData());
+            //}
+            //if (string.IsNullOrEmpty(stationsData.StationsName))
+            //{
+            //    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 0).Equals(Math.Round(longitude, 0)) && Math.Round(x.Latitude, 0).Equals(Math.Round(latitude, 0))).LastOrDefault(new StationsData());
+            //}
+            //if (string.IsNullOrEmpty(stationsData.StationsName))
+            //{
+            //    stationsData.StationsName = "Lycksele"; // DEBUG: Default to Lycksele, because why not? Change this behavior to something else
+            //}
+            //return stationsData;
+        }
+
+        private WeatherData? GetWeatherDataForStation(int stationID)
+        {
+            string? smhiLatestHourAirTempJsonAddress = _configuration?["SMHI_URLS:SMHI_JSON_LATEST_HOUR_AIRTEMP_URL"];
+            if (string.IsNullOrWhiteSpace(smhiLatestHourAirTempJsonAddress))
+            {
+                smhiLatestHourAirTempJsonAddress = Shared.Constants.DEFAULT_SMHI_JSON_LATEST_HOUR_AIRTEMP_URL;
+            }
+            // API call; get temperature in Celsius for SMHI station with identifier smhiStationID)
+            string smhiLatestHourDataFromStationJsonAddress = string.Format(smhiLatestHourAirTempJsonAddress, stationID);
+            try
+            {
+                SmhiLatestHourAirTemp? stationTemp = _client.GetFromJsonAsync<SmhiLatestHourAirTemp>(smhiLatestHourDataFromStationJsonAddress).Result;
+                //SmhiLatestHourAirTemp? stationTemp = await _client.GetFromJsonAsync<SmhiLatestHourAirTemp>(smhiLatestHourDataFromStationJsonAddress).Result;
+                if (stationTemp is null || stationTemp?.ValueData is null)
+                    return null;
+
+                string? temperature = stationTemp?.ValueData?[0]?.RoundedValue;
+                DateTime weatherDateTime = Data.SmhiDateHelper.GetDateTimeFromSmhiDate(stationTemp?.ValueData?[0]?.Date);
+                return new WeatherData()
+                {
+                    Date = weatherDateTime,
+                    TemperatureC = Convert.ToInt32(temperature),
+                    Place = stationTemp?.Station?.Name,
+                    Longitude = stationTemp?.Position?[0].Longitude is null ? 0 : stationTemp.Position[0].Longitude,
+                    Latitude = stationTemp?.Position?[0].Latitude is null ? 0 : stationTemp.Position[0].Latitude
+                };
+
+            }
+            catch (Exception ex)
+            {
+                DebugData = ex.ToString();
+                _logger.LogError("Could not get latest hour air temp from url {smhiLatestHourDataFromStationJsonAddress}", smhiLatestHourDataFromStationJsonAddress);
+                return null;
+            }
         }
 
         private async Task<IEnumerable<WeatherData>> GetWeatherDataForPlace(string place)
