@@ -5,7 +5,9 @@ namespace WeatherZilla.WebApp.Pages
 {
     public class AddPlaceModel : PageModel
     {
-        #region Public properties
+        #region Public properties and enum
+
+        public enum STATUS { NoSearchPerformed, ReadyForSearch, Searching, SearchSuccess, NoSearchResult, MissingInput, InvalidInput, SearchFailure, SearchAborted, NoUser };
 
         public string StatusMessage
         {
@@ -32,17 +34,25 @@ namespace WeatherZilla.WebApp.Pages
         public string? UserName { get; set; }
         public STATUS Status { get; private set; }
 
-        #endregion Public properties
+        #endregion Public properties and enum
+
+        #region Injections
 
         private readonly IConfiguration _configuration;
 
-        public enum STATUS { NoSearchPerformed, ReadyForSearch, Searching, SearchSuccess, NoSearchResult, MissingInput, InvalidInput, SearchFailure, SearchAborted, NoUser };
+        #endregion Injections
+
+        #region Constructor
 
         public AddPlaceModel(IConfiguration configuration)
         {
             _configuration = configuration;
             Status = STATUS.NoSearchPerformed;
         }
+
+        #endregion Constructor
+
+        #region Public methods
 
         public void OnGet()
         {
@@ -57,6 +67,8 @@ namespace WeatherZilla.WebApp.Pages
             // Suggestion; Maybe we want to search when user writes, let's say after 3 characters and onwards
             // Then the Post or Submit button press is used for only add to db?
         }
+
+        #endregion Public methods
 
         #region Private methods
 

@@ -20,6 +20,7 @@
         #region Memory cache keys
 
         public static readonly string STATIONDATA_MEMORY_CACHE_KEY = "STATIONDATA_MEMORY_CACHE_KEY";
+        public static readonly string SMHI_STATIONDATA_MEMORY_CACHE_KEY = "SMHI_STATIONDATA_MEMORY_CACHE_KEY";
         public static readonly string AIRTEMP_CACHE_KEY = "AIRTEMP_CACHE_KEY";
 
         #endregion Memory cache keys

@@ -9,10 +9,9 @@ namespace WeatherZilla.WebApp.Pages
         public PrivacyModel(ILogger<PrivacyModel> logger)
         {
             _logger = logger;
+            _logger.LogTrace("Created PrivacyModel");
         }
 
-        public void OnGet()
-        {
-        }
+        public void OnGet() { }
     }
 }

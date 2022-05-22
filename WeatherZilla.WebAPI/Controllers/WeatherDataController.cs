@@ -2,7 +2,6 @@
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
-using System.Collections.Generic;
 using System.Web;
 using WeatherZilla.Shared.Data;
 using WeatherZilla.Shared.Interfaces;
@@ -37,9 +36,7 @@ namespace WeatherZilla.WebAPI.Controllers
 
         private readonly HttpClient _client;
         private static readonly SemaphoreSlim _lock = new(1, 1);
-        private SmhiLatestHourAirTemp? _airTemp;
         private static readonly SemaphoreSlim _stationLock = new(1, 1);
-        private SmhiStations? _stations;
 
         #endregion Private variables
 
@@ -59,27 +56,41 @@ namespace WeatherZilla.WebAPI.Controllers
         #region Public web methods
 
         [HttpGet("GetWeatherData")]
-        public async Task<IEnumerable<WeatherData>> GetAsync(string place)
+        public async Task<IWeatherData?> GetAsync(string place)
         {
-            return await GetWeatherDataForPlace(place);
+            string stationDataMemoryCacheKeyForPlace = Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY + place;
+            // If found in cache, return cached data
+            if (_memoryCache.TryGetValue(stationDataMemoryCacheKeyForPlace, out WeatherData? weatherData))
+            {
+                _logger.LogDebug("Using cached, not live, SMHI station airtemp data for place {place}.", place);
+                return weatherData;
+            }
+            SmhiLatestHourAirTemp? airTemp = await GetAirTempAsync(place);
+            string? temperature = airTemp?.ValueData?[0]?.RoundedValue;
+            DateTime weatherDateTime = Data.SmhiDateHelper.GetDateTimeFromSmhiDate(airTemp?.ValueData?[0]?.Date);
+            weatherData = new()
+            {
+                Date = weatherDateTime,
+                TemperatureC = Convert.ToInt32(temperature),
+                Place = airTemp?.Station?.Name is null ? place : airTemp.Station.Name,
+                Longitude = airTemp?.Position?[0].Longitude is null ? 0 : airTemp.Position[0].Longitude,
+                Latitude = airTemp?.Position?[0].Latitude is null ? 0 : airTemp.Position[0].Latitude
+            };
+            MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromSeconds(120));
+            _memoryCache.Set(stationDataMemoryCacheKeyForPlace, weatherData, cacheOptions);
+            return weatherData;
         }
 
         [HttpGet("GetStationData")]
         public async Task<IEnumerable<IStationsData>> GetAsync()
         {
-            // If found in cache, return cached data
-            if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData> stationDataCollection))
+            if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<IStationsData> stationDataCollection))
             {
                 _logger.LogDebug("Using cached, not live, SMHI station data.");
                 return stationDataCollection;
             }
-
-            stationDataCollection = GetStationDataList(_stations ?? await GetStationsAsync());
-
-            // Set cache options
+            stationDataCollection = GetStationDataList(await GetStationsAsync());
             MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(10));
-
-            // Set object in cache
             _memoryCache.Set(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, stationDataCollection, cacheOptions);
             return stationDataCollection;
         }
@@ -87,7 +98,24 @@ namespace WeatherZilla.WebAPI.Controllers
         [HttpGet("GetStationDataForLocation")]
         public async Task<IStationsData> GetAsync(double longitude, double latitude)
         {
-            return await GetStationDataForLocation(longitude, latitude);
+            // If found in cache, return cached data
+            string locationCacheKey = $"long_{longitude}_lat_{latitude}";
+            if (_memoryCache.TryGetValue(locationCacheKey, out StationsData stationsData))
+            {
+                _logger.LogDebug("Using cached, not live, SMHI station data.");
+                return stationsData;
+            }
+            List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
+            foreach (StationsData sd in sdCollection)
+                if (GetWeatherDataForStation(sd.StationsId) != null)
+                {
+                    stationsData = sd;
+                    break;
+                }
+            if (stationsData == null) stationsData = sdCollection.First();
+            MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(5));
+            _memoryCache.Set(locationCacheKey, stationsData, cacheOptions);
+            return stationsData;
         }
 
         [HttpGet("GetWeatherDatasForGeoLocation")]
@@ -95,13 +123,12 @@ namespace WeatherZilla.WebAPI.Controllers
         {
             List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
             List<WeatherData> wdCollection = new();
-            
+            StationsData stationsData;
             for (int i = 0; i < sdCollection.Count; i++)
             {
-                var stationData = sdCollection[i];
-                WeatherData? wd = GetWeatherDataForStation(stationData.StationsId);
-                if (wd != null)
-                    wdCollection.Add(wd);
+                stationsData = sdCollection[i];
+                WeatherData? wd = GetWeatherDataForStation(stationsData.StationsId);
+                if (wd != null) wdCollection.Add(wd);
             }
             return wdCollection;
         }
@@ -109,14 +136,21 @@ namespace WeatherZilla.WebAPI.Controllers
         [HttpGet("GetWeatherDataForGeoLocation")]
         public async Task<IWeatherData?> GetWeatherDataAsync(double longitude, double latitude)
         {
-            List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
-
-            for (int i = 0; i < sdCollection.Count; i++)
+            List<IStationsData> sdCollection = (List<IStationsData>)await GetStationDatasForLocation(longitude, latitude);
+            try
             {
-                var stationData = sdCollection[i];
-                WeatherData? wd = GetWeatherDataForStation(stationData.StationsId);
-                if (wd != null)
-                    return wd;
+                IStationsData stationsData;
+                for (int i = 0; i < sdCollection.Count; i++)
+                {
+                    stationsData = sdCollection[i];
+                    WeatherData? wd = GetWeatherDataForStation(stationsData.StationsId);
+                    if (wd != null) return wd;
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugData = ex.Message;
+                throw;
             }
             return null;
         }
@@ -125,9 +159,9 @@ namespace WeatherZilla.WebAPI.Controllers
 
         #region Private methods
 
-        private static List<StationsData> GetStationDataList(SmhiStations? stations)
+        private static List<IStationsData> GetStationDataList(SmhiStations? stations)
         {
-            List<StationsData> stationDatas = new();
+            List<IStationsData> stationDatas = new();
             DateTime stationDateTime;
             stations?.Station?.ForEach(smhiStation =>
             {
@@ -149,58 +183,50 @@ namespace WeatherZilla.WebAPI.Controllers
             return stationDatas;
         }
 
-        private async Task<SmhiLatestHourAirTemp> GetAirTempAsync(string place)
+        private async Task<SmhiLatestHourAirTemp?> GetAirTempAsync(string place)
         {
-            if (_airTemp != null)
-            {
-                return await Task.FromResult(_airTemp);
-            }
-
             await _lock.WaitAsync();
             try
             {
-                // double check in case another thread has completed
-                if (_airTemp != null)
-                {
-                    return _airTemp;
-                }
-
-                place = HttpUtility.UrlDecode(place).ToLowerInvariant();
-
-                if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData> stationDataCollection))
-                {
+                // get weather stations
+                if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<IStationsData>? stationDataCollection))
                     _logger.LogDebug("Using cached stationdata");
-                }
                 else
                 {
-                    stationDataCollection = GetStationDataList(_stations ?? await GetStationsAsync());
-                    MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(10));
-                    _memoryCache.Set(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, stationDataCollection, cacheOptions);
+                    stationDataCollection = GetStationDataList(await GetStationsAsync());
+                    MemoryCacheEntryOptions stationCacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(10));
+                    _memoryCache.Set(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, stationDataCollection, stationCacheOptions);
                 }
-                StationsData? matchingPlace = stationDataCollection.Find(x => x.StationsName != null && x.StationsName.ToLowerInvariant().StartsWith(place));
 
+                // get weather station matching place
+                place = HttpUtility.UrlDecode(place).ToLowerInvariant();
+                IStationsData? matchingPlace = stationDataCollection?.Find(x => x.StationsName != null && x.StationsName.ToLowerInvariant().StartsWith(place));
                 if (matchingPlace is null)
                 {
                     _logger.LogDebug("Could not find a station for {place}", place);
+                    return null;
                 }
-                else
+
+                // build url to call to get smhi air temp for latest hour for station
+                string? smhiLatestHourAirTempJsonAddress = _configuration?["SMHI_URLS:SMHI_JSON_LATEST_HOUR_AIRTEMP_URL"];
+                if (string.IsNullOrWhiteSpace(smhiLatestHourAirTempJsonAddress))
+                    smhiLatestHourAirTempJsonAddress = Shared.Constants.DEFAULT_SMHI_JSON_LATEST_HOUR_AIRTEMP_URL;
+                string smhiLatestHourDataFromStationJsonAddress = string.Format(smhiLatestHourAirTempJsonAddress, matchingPlace.StationsId);
+
+                // get air temp for last hour from weather station from cache if available
+                if (_memoryCache.TryGetValue(smhiLatestHourDataFromStationJsonAddress, out SmhiLatestHourAirTemp? smhiLatestHourAirTemp))
                 {
-                    var smhiStationID = matchingPlace.StationsId.ToString();
-
-                    string? smhiLatestHourAirTempJsonAddress = _configuration?["SMHI_URLS:SMHI_JSON_LATEST_HOUR_AIRTEMP_URL"];
-                    if (string.IsNullOrWhiteSpace(smhiLatestHourAirTempJsonAddress))
-                    {
-                        smhiLatestHourAirTempJsonAddress = Shared.Constants.DEFAULT_SMHI_JSON_LATEST_HOUR_AIRTEMP_URL;
-                    }
-
-                    // API call; get temperature in Celsius for SMHI station with identifier smhiStationID)
-                    string smhiLatestHourDataFromStationJsonAddress = string.Format(smhiLatestHourAirTempJsonAddress, smhiStationID);
-
-                    _airTemp = await _client.GetFromJsonAsync<SmhiLatestHourAirTemp>(smhiLatestHourDataFromStationJsonAddress);
+                    _logger.LogDebug("Using cached, not live, SMHI air temperature data.");
+                    return smhiLatestHourAirTemp;
                 }
 
-                _airTemp = (_airTemp is null) ? new SmhiLatestHourAirTemp() : _airTemp;
-                return _airTemp;
+                // API call; get air temp for SMHI station
+                smhiLatestHourAirTemp = await _client.GetFromJsonAsync<SmhiLatestHourAirTemp>(smhiLatestHourDataFromStationJsonAddress);
+
+                // set in memory cache
+                MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromSeconds(120));
+                _memoryCache.Set(smhiLatestHourDataFromStationJsonAddress, smhiLatestHourAirTemp, cacheOptions);
+                return smhiLatestHourAirTemp;
             }
             finally
             {
@@ -208,40 +234,36 @@ namespace WeatherZilla.WebAPI.Controllers
             }
         }
 
-        private async Task<SmhiStations> GetStationsAsync()
+        private async Task<SmhiStations?> GetStationsAsync()
         {
-            if (_stations != null)
+            if (_memoryCache.TryGetValue(Shared.Constants.SMHI_STATIONDATA_MEMORY_CACHE_KEY, out SmhiStations? smhiStations))
             {
-                return await Task.FromResult(_stations);
+                _logger.LogDebug("Using cached SMHI stations");
+                return await Task.FromResult(smhiStations);
             }
-
             await _stationLock.WaitAsync();
             try
             {
                 // double check in case another thread has completed
-                if (_stations != null)
+                if (_memoryCache.TryGetValue(Shared.Constants.SMHI_STATIONDATA_MEMORY_CACHE_KEY, out smhiStations))
                 {
-                    return _stations;
+                    _logger.LogDebug("Using cached SMHI stations");
+                    return await Task.FromResult(smhiStations);
                 }
-
                 // Read address from Application Configuration if available - otherwise use default 
                 // INFO: This value is also set by action .github\workflows\WeatherZilla.AzureDeployment.yml via github to Azure (WebApp environment) during production deployment
                 string? smhiStationsJsonAddress = _configuration?["SMHI_URLS:SMHI_JSON_STATIONS_URL"];
-
                 // DEBUG: Log debug data
                 DebugData = $"Tried to read application configuration key 'SMHI_URLS:SMHI_JSON_STATIONS_URL' in Azure and it returned {(string.IsNullOrWhiteSpace(smhiStationsJsonAddress) ? "nothing; using default value '" + Shared.Constants.DEFAULT_SMHI_JSON_STATIONS_URL + "'" : "'" + smhiStationsJsonAddress + "'")}.";
                 _logger.LogDebug("{DebugData}", DebugData);
-
                 if (string.IsNullOrWhiteSpace(smhiStationsJsonAddress))
-                {
                     smhiStationsJsonAddress = Shared.Constants.DEFAULT_SMHI_JSON_STATIONS_URL;
-                }
-
                 // Call SMHI with HttpClient to get Json into class Data.SmhiStations (which should be matching their data)
-                _stations = await _client.GetFromJsonAsync<SmhiStations>(smhiStationsJsonAddress);
-
-                _stations = (_stations is null) ? new SmhiStations() : _stations;
-                return _stations;
+                smhiStations = await _client.GetFromJsonAsync<SmhiStations>(smhiStationsJsonAddress);
+                // set in memory cache
+                MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(5));
+                _memoryCache.Set(Shared.Constants.SMHI_STATIONDATA_MEMORY_CACHE_KEY, smhiStations, cacheOptions);
+                return smhiStations;
             }
             finally
             {
@@ -252,139 +274,62 @@ namespace WeatherZilla.WebAPI.Controllers
         private async Task<IEnumerable<IStationsData>> GetStationDatasForLocation(double longitude, double latitude)
         {
             // If found in cache, return cached data
-            if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData> stationDataCollection))
-            {
+            if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<IStationsData> stationDataCollection))
                 _logger.LogDebug("Using cached, not live, SMHI station data.");
-            }
             else
             {
-                stationDataCollection = GetStationDataList(_stations ?? await GetStationsAsync());
-                // Set cache options
-                MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(10));
-                // Set object in cache
-                _memoryCache.Set(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, stationDataCollection, cacheOptions);
+                try
+                {
+                    _memoryCache.TryGetValue(Shared.Constants.SMHI_STATIONDATA_MEMORY_CACHE_KEY, out SmhiStations? smhiStations);
+                    stationDataCollection = GetStationDataList(smhiStations ?? await GetStationsAsync());
+                    MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(5));
+                    _memoryCache.Set(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, stationDataCollection, cacheOptions);
+
+                }
+                catch (Exception ex)
+                {
+                    DebugData = ex.Message;
+                    throw;
+                }
             }
             // Get stationdata list sorted closest to user longitude and latitude
             GeoCoordinate.NetStandard2.GeoCoordinate? userCoordinate = new(latitude, longitude);
             IEnumerable<GeoCoordinate.NetStandard2.GeoCoordinate> nearestStationCoordinates = stationDataCollection.Select(x => new GeoCoordinate.NetStandard2.GeoCoordinate(x.Latitude, x.Longitude))
                                    .Where(x => x != null)
                                    .OrderBy(x => x.GetDistanceTo(userCoordinate)).Distinct().Take(10);
-            List<StationsData> stationsDatas = new();
-            StationsData? stationsData = null;
-            IEnumerable<StationsData>? tempStationsDatas = null;
+            List<IStationsData> stationsDatas = new();
+            IEnumerable<IStationsData>? tempStationsDatas = null;
             if (nearestStationCoordinates != null)
-            {
                 foreach (GeoCoordinate.NetStandard2.GeoCoordinate nearestStationCoordinate in nearestStationCoordinates)
                 {
-                    tempStationsDatas = (IEnumerable<StationsData>?)stationDataCollection.Where(x => x.Longitude.Equals(nearestStationCoordinate.Longitude) &&
+                    tempStationsDatas = (IEnumerable<IStationsData>?)stationDataCollection.Where(x => x.Longitude.Equals(nearestStationCoordinate.Longitude) &&
                         x.Latitude.Equals(nearestStationCoordinate.Latitude) && !string.IsNullOrEmpty(x.StationsName)).DistinctBy(y => y.StationsName).Take(10);
-                    if (tempStationsDatas != null)
-                    {
-                        stationsDatas.AddRange(tempStationsDatas);
-                    }
+                    if (tempStationsDatas != null) stationsDatas.AddRange(tempStationsDatas);
                 }
-            }
-
-            // If no match, just try to get a value
-            if (stationsDatas.Count < 1 || (stationsDatas.Count == 1 && string.IsNullOrEmpty(stationsDatas[0].StationsName)))
-            {
-                stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 2).Equals(Math.Round(longitude, 2)) && Math.Round(x.Latitude, 2).Equals(Math.Round(latitude, 2))).LastOrDefault(new StationsData());
-                if (string.IsNullOrEmpty(stationsData?.StationsName))
-                {
-                    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 1).Equals(Math.Round(longitude, 1)) && Math.Round(x.Latitude, 1).Equals(Math.Round(latitude, 1))).LastOrDefault(new StationsData());
-                }
-                if (string.IsNullOrEmpty(stationsData?.StationsName))
-                {
-                    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 0).Equals(Math.Round(longitude, 0)) && Math.Round(x.Latitude, 0).Equals(Math.Round(latitude, 0))).LastOrDefault(new StationsData());
-                }
-                if (string.IsNullOrEmpty(stationsData?.StationsName))
-                {
-                    stationsData = new() { StationsName = "Lycksele" };
-                }
-                stationsDatas.Add(stationsData);
-            }
             return stationsDatas;
-        }
-
-        private async Task<IStationsData> GetStationDataForLocation(double longitude, double latitude)
-        {
-
-            // TODO: Do not rely on this slow function that handles all stations with linq etc. also implement the memory cache for the value
-            List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
-            for (int i = 0; i < sdCollection.Count; i++)
-            {
-                var stationData = sdCollection[i];
-
-                if (GetWeatherDataForStation(stationData.StationsId) != null)
-                    return stationData;
-            }
-            return sdCollection.ToArray()[0];
-
-            //// If found in cache, return cached data
-            //if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData> stationDataCollection))
-            //{
-            //    _logger.LogDebug("Using cached, not live, SMHI station data.");
-            //}
-            //else
-            //{
-            //    stationDataCollection = GetStationDataList(_stations ?? await GetStationsAsync());
-            //    // Set cache options
-            //    MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromHours(10));
-            //    // Set object in cache
-            //    _memoryCache.Set(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, stationDataCollection, cacheOptions);
-            //}
-            //// Try to get stationdata closest to user longitude and latitude
-            //// TODO: Do the linq selection on already filtered list where temperature is available
-            //GeoCoordinate.NetStandard2.GeoCoordinate? userCoordinate = new(latitude, longitude);
-            //GeoCoordinate.NetStandard2.GeoCoordinate? nearestStationCoordinate = stationDataCollection.Select(x => new GeoCoordinate.NetStandard2.GeoCoordinate(x.Latitude, x.Longitude))
-            //                       .Where(x => x != null)
-            //                       .OrderBy(x => x.GetDistanceTo(userCoordinate))
-            //                       .FirstOrDefault();
-            //StationsData stationsData = new();
-            //if (nearestStationCoordinate != null) 
-            //{
-            //    stationsData = stationDataCollection.Where(x => x.Longitude.Equals(nearestStationCoordinate.Longitude) &&
-            //    x.Latitude.Equals(nearestStationCoordinate.Latitude) && !string.IsNullOrEmpty(x.StationsName)).FirstOrDefault(new StationsData());
-            //}
-            //// If no match, just try to get a value
-            //if (string.IsNullOrEmpty(stationsData.StationsName))
-            //{
-            //    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 2).Equals(Math.Round(longitude, 2)) && Math.Round(x.Latitude, 2).Equals(Math.Round(latitude, 2))).LastOrDefault(new StationsData());
-            //}
-            //if (string.IsNullOrEmpty(stationsData.StationsName))
-            //{
-            //    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 1).Equals(Math.Round(longitude, 1)) && Math.Round(x.Latitude, 1).Equals(Math.Round(latitude, 1))).LastOrDefault(new StationsData());
-            //}
-            //if (string.IsNullOrEmpty(stationsData.StationsName))
-            //{
-            //    stationsData = stationDataCollection.Where(x => Math.Round(x.Longitude, 0).Equals(Math.Round(longitude, 0)) && Math.Round(x.Latitude, 0).Equals(Math.Round(latitude, 0))).LastOrDefault(new StationsData());
-            //}
-            //if (string.IsNullOrEmpty(stationsData.StationsName))
-            //{
-            //    stationsData.StationsName = "Lycksele"; // DEBUG: Default to Lycksele, because why not? Change this behavior to something else
-            //}
-            //return stationsData;
         }
 
         private WeatherData? GetWeatherDataForStation(int stationID)
         {
             string? smhiLatestHourAirTempJsonAddress = _configuration?["SMHI_URLS:SMHI_JSON_LATEST_HOUR_AIRTEMP_URL"];
             if (string.IsNullOrWhiteSpace(smhiLatestHourAirTempJsonAddress))
-            {
                 smhiLatestHourAirTempJsonAddress = Shared.Constants.DEFAULT_SMHI_JSON_LATEST_HOUR_AIRTEMP_URL;
-            }
-            // API call; get temperature in Celsius for SMHI station with identifier smhiStationID)
-            string smhiLatestHourDataFromStationJsonAddress = string.Format(smhiLatestHourAirTempJsonAddress, stationID);
+            smhiLatestHourAirTempJsonAddress = string.Format(smhiLatestHourAirTempJsonAddress, stationID);
             try
             {
-                SmhiLatestHourAirTemp? stationTemp = _client.GetFromJsonAsync<SmhiLatestHourAirTemp>(smhiLatestHourDataFromStationJsonAddress).Result;
-                //SmhiLatestHourAirTemp? stationTemp = await _client.GetFromJsonAsync<SmhiLatestHourAirTemp>(smhiLatestHourDataFromStationJsonAddress).Result;
-                if (stationTemp is null || stationTemp?.ValueData is null)
-                    return null;
+                // If found in cache, return cached data
+                if (_memoryCache.TryGetValue(smhiLatestHourAirTempJsonAddress, out WeatherData weatherData))
+                {
+                    _logger.LogDebug("Using cached, not live, SMHI station airtemp data for station ID {stationID}.", stationID);
+                    return weatherData;
+                }
+                // API call; get temperature in Celsius for SMHI station with identifier smhiStationID)
+                SmhiLatestHourAirTemp? stationTemp = _client.GetFromJsonAsync<SmhiLatestHourAirTemp>(smhiLatestHourAirTempJsonAddress).Result;
+                if (stationTemp is null || stationTemp?.ValueData is null) return null;
 
                 string? temperature = stationTemp?.ValueData?[0]?.RoundedValue;
                 DateTime weatherDateTime = Data.SmhiDateHelper.GetDateTimeFromSmhiDate(stationTemp?.ValueData?[0]?.Date);
-                return new WeatherData()
+                weatherData = new WeatherData()
                 {
                     Date = weatherDateTime,
                     TemperatureC = Convert.ToInt32(temperature),
@@ -392,48 +337,16 @@ namespace WeatherZilla.WebAPI.Controllers
                     Longitude = stationTemp?.Position?[0].Longitude is null ? 0 : stationTemp.Position[0].Longitude,
                     Latitude = stationTemp?.Position?[0].Latitude is null ? 0 : stationTemp.Position[0].Latitude
                 };
-
+                MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromSeconds(120));
+                _memoryCache.Set(smhiLatestHourAirTempJsonAddress, weatherData, cacheOptions);
+                return weatherData;
             }
             catch (Exception ex)
             {
                 DebugData = ex.ToString();
-                _logger.LogError("Could not get latest hour air temp from url {smhiLatestHourDataFromStationJsonAddress}", smhiLatestHourDataFromStationJsonAddress);
+                _logger.LogError("Could not get latest hour air temp from url {smhiLatestHourAirTempJsonAddress}, exception: {DebugData}", smhiLatestHourAirTempJsonAddress, DebugData);
                 return null;
             }
-        }
-
-        private async Task<IEnumerable<WeatherData>> GetWeatherDataForPlace(string place)
-        {
-            var stationDataMemoryCacheKeyForPlace = Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY + place;
-            // If found in cache, return cached data
-            if (_memoryCache.TryGetValue(stationDataMemoryCacheKeyForPlace, out List<WeatherData> weatherDataCollection))
-            {
-                _logger.LogDebug("Using cached, not live, SMHI station airtemp data for place {place}.", place);
-                return weatherDataCollection;
-            }
-
-            SmhiLatestHourAirTemp? airTemp = _airTemp ?? await GetAirTempAsync(place);
-            string? temperature = airTemp?.ValueData?[0]?.RoundedValue;
-            DateTime weatherDateTime = Data.SmhiDateHelper.GetDateTimeFromSmhiDate(airTemp?.ValueData?[0]?.Date);
-            weatherDataCollection = new()
-            {
-                 new WeatherData()
-                {
-                    Date = weatherDateTime,
-                    TemperatureC = Convert.ToInt32(temperature),
-                    Place = airTemp?.Station?.Name is null ? place : airTemp.Station.Name,
-                    Longitude = airTemp?.Position?[0].Longitude is null ? 0 : airTemp.Position[0].Longitude,
-                    Latitude = airTemp?.Position?[0].Latitude is null ? 0 : airTemp.Position[0].Latitude
-                }
-            };
-
-            // Set cache options
-            MemoryCacheEntryOptions cacheOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromSeconds(120));
-
-            // Set object in cache
-            _memoryCache.Set(stationDataMemoryCacheKeyForPlace, weatherDataCollection, cacheOptions);
-
-            return weatherDataCollection;
         }
 
         #endregion Private methods
