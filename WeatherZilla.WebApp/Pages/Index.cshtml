@@ -31,14 +31,15 @@
 {
     <p class="debugInfo"><strong>Debug:</strong>&nbsp;@Model.DebugData</p>        
 }
-
 </div>
 
 <script type="text/javascript">
+	window.onload = function() {
+		if (!window.location.search.includes('longitude') && navigator.geolocation) navigator.geolocation.getCurrentPosition(useLocation);
+	};
+
 	function getLocation() {
-		if (navigator.geolocation) {
-			navigator.geolocation.getCurrentPosition(useLocation);
-		}
+		navigator.geolocation && navigator.geolocation.getCurrentPosition(useLocation);
 	};
 
 	function useLocation(position) {
@@ -46,11 +47,10 @@
 	};
 
 	function openSwaggerWindowDev() {
-		var win = window.open('https://localhost:7165/swagger/index.html', '_blank');
-		win.focus();
+		window.open('https://localhost:7165/swagger/index.html', '_blank').focus();
 	};
+
 	function openSwaggerWindowProd() {
-		var win = window.open('https://weatherzilla.azurewebsites.net/api/swagger/index.html', '_blank');
-		win.focus();
+		window.open('https://weatherzilla.azurewebsites.net/api/swagger/index.html', '_blank').focus();
 	};
 </script>
