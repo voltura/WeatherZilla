@@ -1,4 +1,5 @@
 ﻿@page
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment hostingEnv
 @model WeatherZilla.WebApp.Pages.IndexModel
 @{
     ViewData["Title"] = "WeatherZilla";
@@ -8,11 +9,24 @@
 </div>
 <div>
     <br>
-    <p>It's&nbsp;<b>@Model.Temperature°C</b>&nbsp;in&nbsp;<i>@Model.Place</i>&nbsp;right now.</p>
-	<button id="locationButton" type="button" class="greenbtn" onclick="getLocation()">Use Actual Location</button>
+	@if (!string.IsNullOrEmpty(Model.Temperature)) {
+		<p>It's&nbsp;<b>@Model.Temperature°C</b>&nbsp;in&nbsp;<i>@Model.Place</i>&nbsp;right now.</p>
+	} 
+	else
+	{
+		<p>Could not get temperature right now.</p>
+	}
+	<button id="locationButton" type="button" class="greenbtn" onclick="getLocation()">Get temperature</button>
+	<br>
+    <br>
+	<environment include="Development">
+		<button id="apiButton" type="button" class="greenbtn" onclick="openSwaggerWindowDev()">View local API</button>
+	</environment>
+	<environment exclude="Development">
+		<button id="apiButton" type="button" class="greenbtn" onclick="openSwaggerWindowProd()">View API</button>
+	</environment>
     <br>
     <br>
-
 @if (!string.IsNullOrWhiteSpace(Model.DebugData))
 {
     <p class="debugInfo"><strong>Debug:</strong>&nbsp;@Model.DebugData</p>        
@@ -29,5 +43,14 @@
 
 	function useLocation(position) {
 		window.location.replace('?longitude=' + position.coords.longitude + '&latitude=' + position.coords.latitude);
+	};
+
+	function openSwaggerWindowDev() {
+		var win = window.open('https://localhost:7165/swagger/index.html', '_blank');
+		win.focus();
+	};
+	function openSwaggerWindowProd() {
+		var win = window.open('https://weatherzilla.azurewebsites.net/api/swagger/index.html', '_blank');
+		win.focus();
 	};
 </script>
