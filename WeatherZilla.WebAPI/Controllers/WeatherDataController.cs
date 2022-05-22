@@ -84,7 +84,7 @@ namespace WeatherZilla.WebAPI.Controllers
         [HttpGet("GetStationData")]
         public async Task<IEnumerable<IStationsData>> GetAsync()
         {
-            if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<IStationsData> stationDataCollection))
+            if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData> stationDataCollection))
             {
                 _logger.LogDebug("Using cached, not live, SMHI station data.");
                 return stationDataCollection;
@@ -105,7 +105,7 @@ namespace WeatherZilla.WebAPI.Controllers
                 _logger.LogDebug("Using cached, not live, SMHI station data.");
                 return stationsData;
             }
-            List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
+            List<StationsData> sdCollection = await GetStationDatasForLocation(longitude, latitude);
             foreach (StationsData sd in sdCollection)
                 if (GetWeatherDataForStation(sd.StationsId) != null)
                 {
@@ -121,7 +121,7 @@ namespace WeatherZilla.WebAPI.Controllers
         [HttpGet("GetWeatherDatasForGeoLocation")]
         public async Task<IEnumerable<IWeatherData>> GetWeatherDatasAsync(double longitude, double latitude)
         {
-            List<StationsData> sdCollection = (List<StationsData>)await GetStationDatasForLocation(longitude, latitude);
+            List<StationsData> sdCollection = await GetStationDatasForLocation(longitude, latitude);
             List<WeatherData> wdCollection = new();
             StationsData stationsData;
             for (int i = 0; i < sdCollection.Count; i++)
@@ -136,7 +136,7 @@ namespace WeatherZilla.WebAPI.Controllers
         [HttpGet("GetWeatherDataForGeoLocation")]
         public async Task<IWeatherData?> GetWeatherDataAsync(double longitude, double latitude)
         {
-            List<IStationsData> sdCollection = (List<IStationsData>)await GetStationDatasForLocation(longitude, latitude);
+            List<StationsData> sdCollection = await GetStationDatasForLocation(longitude, latitude);
             try
             {
                 IStationsData stationsData;
@@ -159,9 +159,9 @@ namespace WeatherZilla.WebAPI.Controllers
 
         #region Private methods
 
-        private static List<IStationsData> GetStationDataList(SmhiStations? stations)
+        private static List<StationsData> GetStationDataList(SmhiStations? stations)
         {
-            List<IStationsData> stationDatas = new();
+            List<StationsData> stationDatas = new();
             DateTime stationDateTime;
             stations?.Station?.ForEach(smhiStation =>
             {
@@ -189,7 +189,7 @@ namespace WeatherZilla.WebAPI.Controllers
             try
             {
                 // get weather stations
-                if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<IStationsData>? stationDataCollection))
+                if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData>? stationDataCollection))
                     _logger.LogDebug("Using cached stationdata");
                 else
                 {
@@ -271,10 +271,10 @@ namespace WeatherZilla.WebAPI.Controllers
             }
         }
 
-        private async Task<IEnumerable<IStationsData>> GetStationDatasForLocation(double longitude, double latitude)
+        private async Task<List<StationsData>> GetStationDatasForLocation(double longitude, double latitude)
         {
             // If found in cache, return cached data
-            if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<IStationsData> stationDataCollection))
+            if (_memoryCache.TryGetValue(Shared.Constants.STATIONDATA_MEMORY_CACHE_KEY, out List<StationsData> stationDataCollection))
                 _logger.LogDebug("Using cached, not live, SMHI station data.");
             else
             {
@@ -297,12 +297,12 @@ namespace WeatherZilla.WebAPI.Controllers
             IEnumerable<GeoCoordinate.NetStandard2.GeoCoordinate> nearestStationCoordinates = stationDataCollection.Select(x => new GeoCoordinate.NetStandard2.GeoCoordinate(x.Latitude, x.Longitude))
                                    .Where(x => x != null)
                                    .OrderBy(x => x.GetDistanceTo(userCoordinate)).Distinct().Take(10);
-            List<IStationsData> stationsDatas = new();
-            IEnumerable<IStationsData>? tempStationsDatas = null;
+            List<StationsData> stationsDatas = new();
+            IEnumerable<StationsData>? tempStationsDatas = null;
             if (nearestStationCoordinates != null)
                 foreach (GeoCoordinate.NetStandard2.GeoCoordinate nearestStationCoordinate in nearestStationCoordinates)
                 {
-                    tempStationsDatas = (IEnumerable<IStationsData>?)stationDataCollection.Where(x => x.Longitude.Equals(nearestStationCoordinate.Longitude) &&
+                    tempStationsDatas = (IEnumerable<StationsData>?)stationDataCollection.Where(x => x.Longitude.Equals(nearestStationCoordinate.Longitude) &&
                         x.Latitude.Equals(nearestStationCoordinate.Latitude) && !string.IsNullOrEmpty(x.StationsName)).DistinctBy(y => y.StationsName).Take(10);
                     if (tempStationsDatas != null) stationsDatas.AddRange(tempStationsDatas);
                 }
