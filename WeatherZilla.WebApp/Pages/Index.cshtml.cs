@@ -14,9 +14,9 @@ namespace WeatherZilla.WebApp.Pages
     {
         #region Public properties
 
-        public string Place { get; set; }
+        public string? Place { get; set; }
         public string? DebugData { get; set; }
-        public string Temperature { get; private set; }
+        public string? Temperature { get; private set; }
 
         #endregion Public properties
 
@@ -40,8 +40,6 @@ namespace WeatherZilla.WebApp.Pages
 
         public IndexModel(ILogger<IndexModel> logger, IConfiguration configuration)
         {
-            Place = "Lycksele";
-            Temperature = "Unknown";
             _logger = logger;
             _configuration = configuration;
             _client = new();
@@ -53,9 +51,7 @@ namespace WeatherZilla.WebApp.Pages
 
         public async Task<IActionResult> OnGetAsync(double? longitude, double? latitude)
         {
-            Place = "Lycksele";
-            if (longitude != null && latitude != null) Temperature = await UseTemperatureFromGeoLocation((double)longitude, (double)latitude);
-            else Temperature = await UseTemperature();
+            Temperature = (longitude != null && latitude != null) ? await UseTemperatureFromGeoLocation((double)longitude, (double)latitude) : await UseTemperature();
             return Page();
         }
 
@@ -67,7 +63,8 @@ namespace WeatherZilla.WebApp.Pages
         {
             IWeatherData? airTempGeo = _airTempGeo ?? await GetAirTempAsyncFromGeoLocation(longitude, latitude);
             string? temperature = airTempGeo?.TemperatureC.ToString();
-            Place = airTempGeo?.Place is null ? "Unknown" : airTempGeo.Place;
+            string actualPlace = airTempGeo?.Place is null ? "Unknown" : airTempGeo.Place;
+            Place = actualPlace.Contains('-') ? actualPlace.Split(new char[] { '-' })[0] : actualPlace;
             // TODO: Check if logic is correct to make class variable _airTempGeo null here - otherwise we will not get correct temperature... Maybe here use Memory Cache as in API as well?
             _airTempGeo = null;
             return temperature is null ? "" : temperature;
@@ -91,18 +88,17 @@ namespace WeatherZilla.WebApp.Pages
                 // double check in case another thread has completed
                 if (_airTemp != null) return _airTemp;
                 // TODO: Validate Place string
-                bool validPlace = Place.All(c => Char.IsLetterOrDigit(c) || c == '-' || c == ' ');
+                bool validPlace = !string.IsNullOrWhiteSpace(Place) && Place.All(c => char.IsLetterOrDigit(c) || c == '-' || c == ' ');
                 if (!validPlace) _logger.LogDebug("Place '{Place}' not valid.", Place);
                 else
                 {
                     try
                     {
-                        Place = HttpUtility.UrlEncode(Place);
                         // Read web api address from Azure configuration (set by action .github\workflows\WeatherZilla.AzureDeployment.yml via github)
                         string weatherDataForPlaceUrl = _configuration["WEATHERZILLA_WEBAPI_URLS:WEATHERDATA_FOR_PLACE_URL"];
                         // DEBUG: Show debug info
                         DebugData = $"Tried to read application configuration key 'WEATHERZILLA_WEBAPI_URLS:WEATHERDATA_FOR_PLACE_URL'; it returned {(string.IsNullOrWhiteSpace(weatherDataForPlaceUrl) ? "nothing; using default value '" + WeatherZilla.Shared.Constants.DEFAULT_WEATHERDATA_FOR_PLACE_URL + "'" : "'" + weatherDataForPlaceUrl + "'")}.";
-                        string address = $"{(string.IsNullOrWhiteSpace(weatherDataForPlaceUrl) ? WeatherZilla.Shared.Constants.DEFAULT_WEATHERDATA_FOR_PLACE_URL : weatherDataForPlaceUrl)}{Place}";
+                        string address = $"{(string.IsNullOrWhiteSpace(weatherDataForPlaceUrl) ? WeatherZilla.Shared.Constants.DEFAULT_WEATHERDATA_FOR_PLACE_URL : weatherDataForPlaceUrl)}{HttpUtility.UrlEncode(Place)}";
                         // Demo API call; get temperature in Celsius for Lycksele
                         _airTemp = await _client.GetFromJsonAsync<WeatherData>(address);
                     }
