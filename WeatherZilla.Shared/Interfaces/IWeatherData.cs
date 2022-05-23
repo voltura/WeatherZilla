@@ -11,6 +11,17 @@ namespace WeatherZilla.Shared.Interfaces
         public string? Summary { get; set; }
 
         public string? Place { get; set; }
+        public string FormattedPlace
+        {
+            get
+            {
+                string actualPlace = string.IsNullOrWhiteSpace(Place) ? "Unknown" : Place;
+                actualPlace = (actualPlace.Contains('-') ? actualPlace.Split(new char[] { '-' })[0] : actualPlace).Trim();
+                actualPlace = actualPlace.EndsWith(" A") ? actualPlace[..^2] : actualPlace;
+                return actualPlace;
+            }
+            private set { }
+        }
 
         public double Latitude { get; set; }
 

@@ -63,8 +63,7 @@ namespace WeatherZilla.WebApp.Pages
         {
             IWeatherData? airTempGeo = _airTempGeo ?? await GetAirTempAsyncFromGeoLocation(longitude, latitude);
             string? temperature = airTempGeo?.TemperatureC.ToString();
-            string actualPlace = airTempGeo?.Place is null ? "Unknown" : airTempGeo.Place;
-            Place = actualPlace.Contains('-') ? actualPlace.Split(new char[] { '-' })[0] : actualPlace;
+            Place = airTempGeo?.FormattedPlace is null ? "Unknown" : airTempGeo.FormattedPlace;
             // TODO: Check if logic is correct to make class variable _airTempGeo null here - otherwise we will not get correct temperature... Maybe here use Memory Cache as in API as well?
             _airTempGeo = null;
             return temperature is null ? "" : temperature;
@@ -74,6 +73,7 @@ namespace WeatherZilla.WebApp.Pages
         {
             IWeatherData? airTemp = _airTemp ?? await GetAirTempAsync();
             string? temperature = airTemp?.TemperatureC.ToString();
+            Place = airTemp?.FormattedPlace is null ? "Unknown" : airTemp.FormattedPlace;
             // TODO: Check if logic is correct to make class variable _airTemp null here - otherwise we will not get correct temperature... Maybe here use Memory Cache as in API as well?
             _airTemp = null;
             return temperature is null ? "" : temperature;
