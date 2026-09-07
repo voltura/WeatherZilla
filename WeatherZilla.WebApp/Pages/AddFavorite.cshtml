@@ -1,25 +1,42 @@
-﻿@page
+@page
 @model WeatherZilla.WebApp.Pages.AddPlaceModel
-@{ 
-    ViewData["Title"] = "WeatherZilla - Add favorites";
+@{ ViewData["Title"] = "Favorite places"; }
+<h1>Favorite places</h1>
+@if (!string.IsNullOrEmpty(Model.StatusMessage)) { <p role="status">@Model.StatusMessage</p> }
+<div asp-validation-summary="All" class="text-danger"></div>
+<form method="post" asp-page-handler="Search">
+    <label asp-for="Place">Search for a place</label>
+    <input asp-for="Place" class="form-control" maxlength="128" required minlength="2" />
+    <button type="submit" class="btn btn-primary mt-2">Search</button>
+</form>
+@if (Model.Matches.Count > 0)
+{
+    <h2 class="mt-4">Search results</h2>
+    <ul class="list-group">
+    @foreach (var station in Model.Matches)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>@station.StationsName</span>
+            <form method="post" asp-page-handler="Add">
+                <input type="hidden" name="stationId" value="@station.StationsId" />
+                <button type="submit" class="btn btn-outline-primary">Add favorite</button>
+            </form>
+        </li>
+    }
+    </ul>
 }
-<h1>Add favorite place</h1>
-<p />
-<div>
-    <form method="post" >
-        <fieldset>
-          <legend>Search for place to add</legend>
-          <div>
-            <label for="place">Place:</label>
-            <input type="text" name="Place" id="place" value="" maxlength="20"/>
-            <input type="submit" value="Search"/>
-          </div>
-        </fieldset>
-      </form>
-</div>
-
-<div>
-    <br>
-    @Model.StatusMessage
-    <br>
-</div>
+<h2 class="mt-4">Your favorites</h2>
+@if (Model.Favorites.Count == 0) { <p>No favorite places yet. Search above to add one.</p> }
+<ul class="list-group">
+@foreach (var favorite in Model.Favorites)
+{
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <a asp-page="/Index" asp-route-place="@favorite.Place">@favorite.Place</a>
+        <form method="post" asp-page-handler="Remove">
+            <input type="hidden" name="id" value="@favorite.Id" />
+            <button type="submit" class="btn btn-outline-secondary">Remove</button>
+        </form>
+    </li>
+}
+</ul>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

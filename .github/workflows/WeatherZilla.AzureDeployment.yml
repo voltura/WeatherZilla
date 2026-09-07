@@ -20,7 +20,7 @@ jobs:
       WORKING_DIRECTORY: WeatherZilla.WebApp
     steps:
     - name: Azure Login
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
         creds: ${{ secrets.WeatherZillaWebAPI_spn }}
     - name: Modify deployment target for WebApp
@@ -50,9 +50,9 @@ jobs:
       DOTNET_CORE_VERSION: 6.0.x
       WORKING_DIRECTORY: WeatherZilla.WebApp
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
     - name: Restore
@@ -63,16 +63,37 @@ jobs:
       run: dotnet test "${{ env.WORKING_DIRECTORY }}" --no-build
     - name: Publish
       run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+    - name: Restore database migration tool
+      working-directory: WeatherZilla.WebApp
+      run: dotnet tool restore
+    - name: Generate database migration artifact
+      working-directory: WeatherZilla.WebApp
+      run: dotnet ef migrations script --idempotent --configuration Release --no-build --output ../database-migrations.sql
+    - name: Publish database migration artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: database-migrations
+        path: database-migrations.sql
+    - name: Login for database migration
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.WeatherZillaWebAPI_spn }}
+    - name: Apply database migrations before deploying the app
+      shell: pwsh
+      run: ./scripts/Update-Database.ps1
+    - name: Logout after database migration
+      if: always()
+      run: az logout
     - name: Deploy WebApp to Azure
-      uses: azure/webapps-deploy@v2
+      uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         publish-profile: ${{ env.AZURE_WEBAPP_PUBLISH_PROFILE }}
     - name: Publish WebApp Artifacts
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v4
       with:
-        name: webapp
+        name: weatherzilla-webapp
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
   uppdate-webapi-config:
@@ -89,7 +110,7 @@ jobs:
       WORKING_DIRECTORY: WeatherZilla.WebAPI
     steps:
     - name: Azure Login
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
         creds: ${{ secrets.WeatherZillaWebAPI_spn }}
     - name: Modify deployment target for WebApi
@@ -117,9 +138,9 @@ jobs:
       DOTNET_CORE_VERSION: 6.0.x
       WORKING_DIRECTORY: WeatherZilla.WebAPI
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: ${{ env.DOTNET_CORE_VERSION }}
     - name: Restore
@@ -131,13 +152,13 @@ jobs:
     - name: Publish
       run: dotnet publish "${{ env.WORKING_DIRECTORY }}" --configuration ${{ env.CONFIGURATION }} --no-build --output "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
     - name: Deploy WebApi to Azure
-      uses: azure/webapps-deploy@v2
+      uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
         publish-profile: ${{ env.AZURE_WEBAPP_PUBLISH_PROFILE }}
     - name: Publish WebApi Artifacts
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v4
       with:
-        name: webapp
+        name: weatherzilla-webapi
         path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}

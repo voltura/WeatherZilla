@@ -14,6 +14,7 @@ namespace WeatherZilla.WebApp.Pages
     {
         #region Public properties
 
+        [BindProperty(SupportsGet = true)]
         public string? Place { get; set; }
         public string? DebugData { get; set; }
         public string? Temperature { get; private set; }
@@ -88,7 +89,7 @@ namespace WeatherZilla.WebApp.Pages
                 // double check in case another thread has completed
                 if (_airTemp != null) return _airTemp;
                 // TODO: Validate Place string
-                bool validPlace = !string.IsNullOrWhiteSpace(Place) && Place.All(c => char.IsLetterOrDigit(c) || c == '-' || c == ' ');
+                bool validPlace = !string.IsNullOrWhiteSpace(Place) && Place.Length <= 128;
                 if (!validPlace) _logger.LogDebug("Place '{Place}' not valid.", Place);
                 else
                 {
