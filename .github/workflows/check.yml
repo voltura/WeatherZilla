@@ -20,5 +20,6 @@ jobs:
       - run: dotnet build WeatherZilla.WebApp/WeatherZilla.WebApp.csproj -c Release
       - run: dotnet build WeatherZilla.WebAPI/WeatherZilla.WebAPI.csproj -c Release
       - run: dotnet run --project tests/FavoritesSmoke/FavoritesSmoke.csproj -c Release
+      - run: dotnet run --project tests/ApiSmoke/ApiSmoke.csproj -c Release
       - run: npm ci --prefix tests/validation
       - run: npm test --prefix tests/validation

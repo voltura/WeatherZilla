@@ -62,7 +62,7 @@ namespace WeatherZilla.WebAPI.Controllers
             // If found in cache, return cached data
             if (_memoryCache.TryGetValue(stationDataMemoryCacheKeyForPlace, out WeatherData? weatherData))
             {
-                _logger.LogDebug("Using cached, not live, SMHI station airtemp data for place {place}.", place);
+                _logger.LogDebug("Using cached SMHI station airtemp data for the requested place.");
                 return weatherData;
             }
             SmhiLatestHourAirTemp? airTemp = await GetAirTempAsync(place);
@@ -203,7 +203,7 @@ namespace WeatherZilla.WebAPI.Controllers
                 IStationsData? matchingPlace = stationDataCollection?.Find(x => x.StationsName != null && x.StationsName.ToLowerInvariant().StartsWith(place));
                 if (matchingPlace is null)
                 {
-                    _logger.LogDebug("Could not find a station for {place}", place);
+                    _logger.LogDebug("Could not find a station for the requested place.");
                     return null;
                 }
 
